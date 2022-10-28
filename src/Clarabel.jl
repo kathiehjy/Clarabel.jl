@@ -20,11 +20,6 @@ module Clarabel
     include("./conicvector.jl")
     include("./statuscodes.jl")
     include("./types.jl")
-    include("./variables.jl")
-    include("./residuals.jl")
-    include("./equilibration.jl")
-    include("./info.jl")
-    include("./solution.jl")
 
     #direct LDL linear solve methods
     include("./kktsolvers/direct-ldl/includes.jl")
@@ -32,7 +27,11 @@ module Clarabel
     #KKT solvers and solver level kktsystem
     include("./kktsolvers/kktsolver_defaults.jl")
     include("./kktsolvers/kktsolver_directldl.jl")
-    include("./kktsystem.jl")
+
+    #default solver components implementation
+    include("./implementations/default/include.jl")
+    #<add other problem type implementations here>
+    #include("./implementations/<whatever>/include.jl")
 
     # printing and top level solver
     include("./info_print.jl")

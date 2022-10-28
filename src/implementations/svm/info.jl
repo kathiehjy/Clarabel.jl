@@ -1,60 +1,19 @@
 function info_update!(
-    info::DefaultInfo{T},
-    data::DefaultProblemData{T},
-    variables::DefaultVariables{T},
-    residuals::DefaultResiduals{T},
+    info::SvmInfo{T},
+    data::SvmProblemData{T},
+    variables::SvmVariables{T},
+    residuals::SvmResiduals{T},
     settings::Settings{T},
     timers::TimerOutput
 ) where {T}
 
-    #optimality termination check should be computed w.r.t
-    #the pre-homogenization x and z variables.
-    τinv = inv(variables.τ)
-
-    #shortcuts for the equilibration matrices
-    d = data.equilibration.d; dinv = data.equilibration.dinv
-    e = data.equilibration.e; einv = data.equilibration.einv
-    cscale = data.equilibration.c[]
-
-    #primal and dual costs. dot products are invariant w.r.t
-    #equilibration, but we still need to back out the overall
-    #objective scaling term c
-    xPx_τinvsq_over2 = residuals.dot_xPx * τinv * τinv / 2;
-    info.cost_primal =  (+residuals.dot_qx*τinv + xPx_τinvsq_over2)/cscale
-    info.cost_dual   =  (-residuals.dot_bz*τinv - xPx_τinvsq_over2)/cscale
-
-    #primal and dual relative residuals.   Need to invert the equilibration
-    normx = scaled_norm(dinv,variables.x) * τinv
-    normz = scaled_norm(einv,variables.z) * τinv
-    norms = scaled_norm(einv,variables.s) * τinv
-
-    info.res_primal  = scaled_norm(einv,residuals.rz) * τinv / max(one(T), data.normb + normx + norms)
-    info.res_dual    = scaled_norm(dinv,residuals.rx) * τinv / max(one(T), data.normq + normx + normz)
-
-    #primal and dual infeasibility residuals.   Need to invert the equilibration
-    info.res_primal_inf = scaled_norm(dinv,residuals.rx_inf) / max(one(T), normz)
-    info.res_dual_inf   = max(scaled_norm(dinv,residuals.Px) / max(one(T), normx),
-                              scaled_norm(einv,residuals.rz_inf) / max(one(T), normx + norms))
-
-    #absolute and relative gaps
-    info.gap_abs    = abs(info.cost_primal - info.cost_dual)
-    if(info.cost_primal > zero(T) && info.cost_dual < zero(T))
-        info.gap_rel = floatmax(T)
-    else
-        info.gap_rel = info.gap_abs / max(one(T),min(abs(info.cost_primal),abs(info.cost_dual)))
-    end
-
-    #κ/τ
-    info.ktratio = variables.κ / variables.τ
-
-    #solve time so far (includes setup!)
-    info_get_solve_time!(info,timers)
+    error("Function not yet implemented.")
 
 end
 
 function info_check_termination!(
-    info::DefaultInfo{T},
-    residuals::DefaultResiduals{T},
+    info::SvmInfo{T},
+    residuals::SvmResiduals{T},
     settings::Settings{T},
     iter::Int
 ) where {T}
@@ -68,23 +27,23 @@ function info_check_termination!(
     # poor progress
     #----------------------
     if info.status == UNSOLVED && iter > 0 &&
-        ( info.res_dual > info.prev_res_dual || 
+        ( info.res_dual > info.prev_res_dual ||
           info.res_primal > info.prev_res_primal
         )
-           
-        # Poor progress at high tolerance.  
-        if info.ktratio < 100*eps(T) && 
-            ( info.prev_gap_abs < settings.tol_gap_abs || 
+
+        # Poor progress at high tolerance.
+        if info.ktratio < 100*eps(T) &&
+            ( info.prev_gap_abs < settings.tol_gap_abs ||
               info.prev_gap_rel < settings.tol_gap_rel
             )
             info.status = INSUFFICIENT_PROGRESS
         end
 
         # Going backwards. Stop immediately if residuals diverge out of feasibility tolerance.
-        if ( info.res_dual > settings.tol_feas && 
+        if ( info.res_dual > settings.tol_feas &&
              info.res_dual > 100*info.prev_res_dual
-           ) || 
-           ( info.res_primal > settings.tol_feas && 
+           ) ||
+           ( info.res_primal > settings.tol_feas &&
              info.res_primal > 100*info.prev_res_primal
            )
              info.status = INSUFFICIENT_PROGRESS
@@ -94,7 +53,7 @@ function info_check_termination!(
 
     # time / iteration limits
     #----------------------
-    if info.status == UNSOLVED 
+    if info.status == UNSOLVED
         if settings.max_iter  == info.iterations
             info.status = MAX_ITERATIONS
 
@@ -109,9 +68,9 @@ end
 
 
 function info_save_prev_iterate(
-    info::DefaultInfo{T},
-    variables::DefaultVariables{T},
-    prev_variables::DefaultVariables{T}
+    info::SvmInfo{T},
+    variables::SvmVariables{T},
+    prev_variables::SvmVariables{T}
 ) where {T}
 
     info.prev_cost_primal = info.cost_primal
@@ -125,9 +84,9 @@ function info_save_prev_iterate(
 end
 
 function info_reset_to_prev_iterate(
-    info::DefaultInfo{T},
-    variables::DefaultVariables{T},
-    prev_variables::DefaultVariables{T}
+    info::SvmInfo{T},
+    variables::SvmVariables{T},
+    prev_variables::SvmVariables{T}
 ) where {T}
 
     info.cost_primal = info.prev_cost_primal
@@ -141,7 +100,7 @@ function info_reset_to_prev_iterate(
 end
 
 function info_save_scalars(
-    info::DefaultInfo{T},
+    info::SvmInfo{T},
     μ::T,
     α::T,
     σ::T,
@@ -158,7 +117,7 @@ end
 
 
 function info_reset!(
-    info::DefaultInfo{T},
+    info::SvmInfo{T},
     timers::TimerOutput
 ) where {T}
 
@@ -174,7 +133,7 @@ end
 
 
 function info_get_solve_time!(
-    info::DefaultInfo{T},
+    info::SvmInfo{T},
     timers::TimerOutput
 ) where {T}
     #TimerOutputs reports in nanoseconds
@@ -184,15 +143,15 @@ end
 
 
 function info_finalize!(
-    info::DefaultInfo{T},
-    residuals::DefaultResiduals{T},
+    info::SvmInfo{T},
+    residuals::SvmResiduals{T},
     settings::Settings{T},
     timers::TimerOutput
 ) where {T}
 
     # if there was an error or we ran out of time
     # or iterations, check for partial convergence
-    
+
     if (status_is_errored(info.status) ||
         info.status == MAX_ITERATIONS  ||
         info.status == MAX_TIME
@@ -254,8 +213,8 @@ end
 
 
 function _check_convergence(
-    info::DefaultInfo{T},
-    residuals::DefaultResiduals{T},
+    info::SvmInfo{T},
+    residuals::SvmResiduals{T},
     tol_gap_abs::T,
     tol_gap_rel::T,
     tol_feas::T,
