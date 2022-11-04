@@ -1,3 +1,4 @@
+using LinearAlgebra
 
 function variables_calc_mu(
     variables::SvmVariables{T},
@@ -5,7 +6,7 @@ function variables_calc_mu(
     cones::CompositeCone{T}
 ) where {T}
 
-  error("Function not yet implemented")
+  μ = (variables.λ1 ⋅ variables.ξ + variables.λ2 ⋅ variables.q)/(2 * cones.degree)
 
   return μ
 end
@@ -18,9 +19,21 @@ function variables_calc_step_length(
     settings::Settings{T},
     steptype::Symbol
 ) where {T}
+    α = one(T)
 
-    error("Function not yet implemented")
+    # ξ,q,λ1,λ2 are constrainted to be positive, 
+    # so there is not need to check for sign, like for τ and κ
+    (αξ,αq) = step_length(cones, step.ξ, step.q, variables.ξ, variables.q, settings, α)
+    α = min(αξ, αq)
+    (αλ1,αλ2) = step_length(cones, step.λ1, step.λ2, variables.λ1, variables.λ2, settings, α)
+    α = min(αλ1, αλ2)
 
+
+    if(steptype == :combined)
+        α *= settings.max_step_fraction
+    end
+
+    return α    
 end
 
 
@@ -34,10 +47,16 @@ function variables_barrier(
     error("Function not yet implemented")
 
     #return barrier function
+    # Not required -- leave empty
 end
 
 function variables_copy_from(dest::SvmVariables{T},src::SvmVariables{T}) where {T}
-    error("Function not yet implemented")
+    dest.w .= src.w
+    dest.b  = src.b
+    dest.ξ .= src.ξ
+    dest.λ1.= src.λ1
+    dest.λ2.= src.λ2
+    dest.q .= srs.q
 end
 
 function variables_scale_cones!(
@@ -56,36 +75,53 @@ function variables_add_step!(
     step::SvmVariables{T}, α::T
 ) where {T}
 
-    error("Function not yet implemented")
+    @. variables.w  += α*step.w
+    variables.b     += α*step.b
+    @. variables.ξ  += α*step.ξ
+    @. variables.q  += α*step.q
+    @. variables.λ1 += α*step.λ1
+    @. variables.λ2 += α*step.λ2
 
     return nothing
 end
 
 
 function variables_affine_step_rhs!(
-    d::SvmVariables{T},
-    r::SvmResiduals{T},
-    variables::SvmVariables{T},
+    d::SvmVariables{T},             # rhs of Newton's equation
+    r::SvmResiduals{T},             # residual
+    variables::SvmVariables{T},     # Value of the problem variable at each iterate
     cones::CompositeCone{T}
 ) where{T}
 
-    error("Function not yet implemented")
+    @. d.w     =  r.rw
+    @. d.ξ     =  r.rξ
+    @. d.λ1    =  r.rλ1
+    d.b        =  r.rλ2
+    d.λ2      .=  diagm(variables.λ2) * variables.q
+    d.q       .=  diagm(variables.λ1) * variables.ξ
+    
+
 
     return nothing
 end
 
 
 function variables_combined_step_rhs!(
-    d::SvmVariables{T},
-    r::SvmResiduals{T},
-    variables::SvmVariables{T},
+    d::SvmVariables{T},             # rhs of Newton's equation
+    r::SvmResiduals{T},             # residual
+    variables::SvmVariables{T},     # Value of the problem variable at each iterate
     cones::CompositeCone{T},
-    step::SvmVariables{T},
+    step::SvmVariables{T},          # affine direction term
     σ::T,
     μ::T
 ) where {T}
-
-    error("Function not yet implemented")
+    N = length(d.q)
+    @. d.w  = (one(T) - σ)*r.rw
+    @. d.ξ  = (one(T) - σ)*r.rξ
+    @. d.λ1 = (one(T) - σ)*r.rλ1
+    d.b     = (one(T) - σ)*r.rλ2
+    d.λ2   .= diagm(variables.λ2)*variables.q-ones(T,1,N)*σ*μ-diagm(step.q)*step.λ2
+    d.q    .= diagm(variables.λ1)*variables.ξ-ones(T,1,N)*σ*μ-diagm(step.λ1)*step.ξ
 
 end
 
@@ -96,7 +132,8 @@ function variables_symmetric_initialization!(
     variables::SvmVariables{T},
     cones::CompositeCone{T}
 ) where {T}
-
+    """Leave empty
+    """
     error("Function not yet implemented")
 end
 
@@ -104,11 +141,17 @@ end
 # Calls unit initialization on all conic variables and zeros
 # the primal variables.   Used for nonsymmetric problems.
 function variables_unit_initialization!(
+    Data::SvmProblemData{T}
     variables::SvmVariables{T},
     cones::CompositeCone{T}
 ) where {T}
 
-    error("Function not yet implemented")
+    variables.w .= zeros(T,1,Data.n)
+    variables.b  = zero(T)
+    variables.ξ .= ones(T,1,Data.N)
+    variables.q .= ones(T,1,Data.N)
+    variables.λ1 .= ones(T,1,Data.N)
+    variables.λ2 .= ones(T,1,Data.N)
 end
 
 function variables_finalize!(
@@ -117,13 +160,13 @@ function variables_finalize!(
     status::SolverStatus
 ) where {T}
 
-    error("Function not yet implemented")
+    return
 
 end
 
 
 function variables_rescale!(variables)
 
-    error("Function not yet implemented")
+    return
 
 end

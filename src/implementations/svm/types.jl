@@ -2,20 +2,70 @@
 # Svm solver subcomponent implementations
 # -------------------------------------
 
+
+# ---------------
+# problem data
+# ---------------
+
+mutable struct SvmProblemData{T} <: AbstractProblemData{T}
+
+    x::AbstractMatrix{T}  # Data features x
+    y::Vector{T}          # Data labels y
+    Y::AbstractMatrix{T}  # yx
+    C::T                  # Weights between different objectives
+    n::Integer            # number of features
+    N::Integer            # number of data points
+
+    function SvmProblemData{T}(
+        D::AbstractMatrix{T},
+        C::T,
+    ) where {T}    # D in {x | y form}
+
+        x = deepcopy(D[:,1:end-1])
+        y = deepcopy(D[:,end])
+        Y = zeros(size(D))
+        for i in range(1,length(y))
+            Y[i,:] = x[i,:] .* y[i]
+        end
+        C = C
+        n = size(D, 2) - 1
+        N = size(D, 1)
+        new(x, y, Y, C, n, N)
+    end
+
+end
+
+SvmProblemData(args...) = SvmProblemData{DefaultFloat}(args...)
+
+
+
+
 # ---------------
 # variables
 # ---------------
 
 mutable struct SvmVariables{T} <: AbstractVariables{T}
 
-    # Problem specific fields go here.
+    w::Vector{T}
+    b::T
+    ξ::ConicVector{T}
+    q::ConicVector{T}
+    λ1::ConicVector{T}
+    λ2::ConicVector{T}
+
 
     function SvmVariables{T}(
-        #constructor arguments go here
-    ) where {T}
-
-        #constructor details go here
-
+        n::Integer,        
+        cones::CompositeCone{T}
+    ) where {T}   
+        
+        w = Vector{T}(undef,n)
+        b = T(1)
+        ξ = ConicVector{T}(cones)
+        q = ConicVector{T}(cones)
+        λ1 = ConicVector{T}(cones)
+        λ2 = ConicVector{T}(cones)
+        new(w, b, ξ, q, λ1, λ2)
     end
 
 end
@@ -30,13 +80,22 @@ SvmVariables(args...) = SvmVariables{DefaultFloat}(args...)
 
 mutable struct SvmResiduals{T} <: AbstractResiduals{T}
 
-    # Problem specific fields go here.
+    rw::Vector{T}
+    rξ::Vector{T}
+    rλ1::Vector{T}
+    rλ2::T
 
     function SvmResiduals{T}(
-        #constructor arguments go here
+        n::Integer,
+        N::Integer
         ) where {T}
 
-        #constructor details go here
+        rw = Vector{T}(undef,n)
+        rξ = Vector{T}(undef,N)
+        rλ1 = Vector{T}(undef,N)
+        rλ2 = T(1)
+
+        new(rw, rξ, rλ1, rλ2)
     end
 
 end
@@ -44,40 +103,42 @@ end
 SvmResiduals(args...) = SvmResiduals{DefaultFloat}(args...)
 
 
-# ---------------
-# problem data
-# ---------------
-
-mutable struct SvmProblemData{T} <: AbstractProblemData{T}
-
-    # Problem specific fields go here.
-
-    function SvmProblemData{T}(
-        #constructor arguments go here
-    ) where {T}
-
-        #constructor details go here
-
-    end
-
-end
-
-SvmProblemData(args...) = SvmProblemData{DefaultFloat}(args...)
-
 
 # ----------------------
 # progress info
 # ----------------------
 
 mutable struct SvmInfo{T} <: AbstractInfo{T}
+# Same as the default one 
+    μ::T
+    sigma::T
+    step_length::T
+    iterations::UInt32
+    cost_primal::T
+    cost_dual::T
+    res_primal::T
+    res_dual::T
+    res_primal_inf::T
+    res_dual_inf::T
+    gap_abs::T
+    gap_rel::T
+    ktratio::T
 
-    # Problem specific fields go here.
+    # previous iterate
+    prev_cost_primal::T
+    prev_cost_dual::T
+    prev_res_primal::T
+    prev_res_dual::T
+    prev_gap_abs::T
+    prev_gap_rel::T
 
-    function SvmInfo{T}(
-        #constructor arguments go here
-    ) where {T}
+    solve_time::Float64
+    status::SolverStatus
 
-        #constructor details go here
+    function SvmInfo{T}() where {T}
+
+        prevvals = ntuple(x->floatmax(T), 6);
+        new((ntuple(x->0, fieldcount(DefaultInfo)-6-1)...,prevvals...,UNSOLVED)...)
 
     end
 
@@ -90,15 +151,34 @@ SvmInfo(args...) = SvmInfo{DefaultFloat}(args...)
 # ---------------
 
 mutable struct SvmKKTSystem{T} <: AbstractKKTSystem{T}
+""" Encode the reduced KKT system
+    Not sure
+"""
+    #the KKT system solver
+    kktsolver::AbstractKKTSolver{T}
 
-    # Problem specific fields go here.
+    #solution vector for reduced KKT system 
+    w::Vector{T}
+    b::T
+
+    function SvmKKTSystem{T}(
+        data::SvmProblemData{T},
+        cones::CompositeCone{T},
+        settings::Settings{T}
+    ) where {T}
+
+        #basic problem dimensions
+        n = data.n
+
+        #create the linear solver.  Always LDL for now
+        kktsolver = DirectLDLKKTSolver{T}(data.P,data.A,cones,m,n,settings)
+
+        #the LHS of the reduced solve
+        w   = Vector{T}(undef,n)
+        b   = T(1)
 
 
-        function SvmKKTSystem{T}(
-            #constructor arguments go here
-        ) where {T}
-
-        #constructor details go here
+        return new(kktsolver,w,b)
 
     end
 
@@ -112,15 +192,64 @@ SvmKKTSystem(args...) = SvmKKTSystem{DefaultFloat}(args...)
 # solver results
 # ---------------
 
+"""
+    SvmSolution{T <: AbstractFloat}
+Object returned by the Svm solver after calling `optimize!(model)`.
+
+Fieldname | Description
+---  | :--- | :---
+w | Vector{T}| Primal variable
+b | T | Primal variable
+ξ | Vector{T}| Primal variable
+
+λ1 | Vector{T}| Dual variable
+λ2 | Vector{T}| Dual variable
+
+q | Vector{T}| (Primal) set variable
+
+status | Symbol | Solution status
+obj_val | T | Objective value
+solve_time | T | Solver run time
+iterations | Int | Number of solver iterations
+r_prim       | primal residual at termination
+r_dual       | dual residual at termination
+"""
+
 mutable struct SvmSolution{T} <: AbstractSolution{T}
 
-    # Problem specific fields go here.
+    w::Vector{T}
+    b::T
+    ξ::Vector{T}
+    λ1::Vector{T}
+    λ2::Vector{T}
+    q::Vector{T}
+
+    status::SolverStatus
+    obj_val::T
+    solve_time::T
+    iterations::UInt32
+    r_prim::T
+    r_dual::T
 
 end
 
-function SvmSolution{T}(m,n) where {T <: AbstractFloat}
+function SvmSolution{T}(n,N) where {T <: AbstractFloat}
+    w = Vector{T}(undef,n)
+    b = T(1)
+    ξ = Vector{T}(undef,N)
+    λ1 = Vector{T}(undef,N)
+    λ2 = Vector{T}(undef,N)
+    q = Vector{T}(undef,N)
 
-    #constructor details go here
+    # seemingly reasonable defaults
+    status  = UNSOLVED
+    obj_val = T(NaN)
+    solve_time = zero(T)
+    iterations = 0
+    r_prim     = T(NaN)
+    r_dual     = T(NaN)
+    
+    return SvmSolution{T}(w,b,ξ,λ1,λ2,q,status,obj_val,solve_time,iterations,r_prim,r_dual)
 end
 
 SvmSolution(args...) = SvmSolution{DefaultFloat}(args...)
