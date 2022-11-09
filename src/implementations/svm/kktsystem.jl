@@ -28,58 +28,74 @@ end
 
 function kkt_solve!(
     kktsystem::SvmKKTSystem{T},
-    lhs::SvmVariables{T},
-    rhs::SvmVariables{T},
-    data::SvmProblemData{T},
-    variables::SvmVariables{T},
-    cones::CompositeCone{T},
+    lhs::SvmVariables{T},      # Δ values, store the updated values of steps
+    data::SvmProblemData{T},   # Store the problem formulation to set up the coefficient matrix
+    variables::SvmVariables{T},   # Value of system variable from previous iteration
+    residuals::SvmResiduals{T}
     steptype::Symbol   #:affine or :combined
 ) where{T}
-"""variable means the value at each iteration, not the size of the step?
+"""variable means the value at each iteration, not the size of the step
 """
-    (w,b) = (kktsystem.w, kktsystem.b)
+
+    rλ2 = residuals.rλ2
+    rλ1 = residuals.rλ1
+    rξ  = residuals.rξ
+    rw  = residuals.rw
+    λ1  = variables.λ1
+    λ2  = variables.λ2
+    q   = variables.q
+    ξ   = variables.ξ
+
+    n = data.n
+    N = data.N
+
+    # construct y and s
+    s = data.y # s is label vector
+    x = data.x # feature matrix
+    y = data.Y # pairwise y = s * x
+
+    
+    # Construct D, used repeatedly 
+    Dξ = Diagonal(ξ)
+    Dλ1 = Diagonal(λ1)
+    Dλ2 = Diagonal(λ2)
+    Dq = Diagonal(q)
+    D = inv(inv(Dλ2)*Dq + inv(Dλ1)*Dξ)
+
+    # Construct the linear coefficient of linear system
+    I1 = Matrix(1.0I, n, n)     # The identity matrix added to the left top corner
+    TL = transpose(y) * D * y   # LT -- stand for top left element
+    BL = -transpose(s) * D * y  # LB -- bottom left element 
+    TR = transpose(BL)
+    BR = transpose(s) * D * s
+    #Linear_system_coef = [I1+TL, TR;BL, BR]
+    top = hcat(I1+TL, TR)
+    bottom = hcat(BL, BR)
+    Linear_system_coef = vcat(top, bottom)
 
 
+    # Construct the rhs of the linear system   rhs = [Trhs; Brhs]
+    Trhs = -rw + transpose(y)*D*(-rξ+ξ+inv(Dλ1)*Dξ*rλ1-q)
+    Brhs = -rλ2 .- transpose(s)*D*(-rξ+ξ+inv(Dλ1)*Dξ*rλ1-q)
+    rhs = vcat(Trhs, Brhs)
+    result = inv(Linear_system_coef) * rhs      # result = [Δw; Δb]
+    Δw = result[1:end-1]
+    Δb = result[end]
 
-    ## Once get Δw and Δb, use them to get all the other variables
-    #solve for Δλ2.
-    #-----------
-    # Numerator first
-    ξ   = workx
-    @. ξ = variables.x / variables.τ
+    # Solve for Δλ2, Δξ, Δq, Δλ1 given Δw, Δb
+    Δλ2 = D * (-rξ -y*Δw + ξ + inv(Dλ1)*Dξ*rλ1 - q + s.*Δb)
+    Δλ1 = rλ1 - Δλ2
+    Δq = -q - inv(Dλ2)*Dq*Δλ2
+    Δξ = -ξ - inv(Dλ1)*Dξ*Δλ1
+    
+    # Update the step size
+    lhs.λ1 = Δλ1
+    lhs.λ2 = Δλ2
+    lhs.q  = Δq
+    lhs.ξ  = Δξ
+    lhs.w  = Δw
+    lhs.b  = Δb
 
-    P   = Symmetric(data.P)
-
-    tau_num = rhs.τ - rhs.κ/variables.τ + dot(data.q,x1) + dot(data.b,z1) + 2*quad_form(ξ,P,x1)
-
-    #offset ξ for the quadratic form in the denominator
-    ξ_minus_x2    = ξ   #alias to ξ, same as workx
-    @. ξ_minus_x2  -= x2
-
-    tau_den  = variables.κ/variables.τ - dot(data.q,x2) - dot(data.b,z2)
-    tau_den += quad_form(ξ_minus_x2,P,ξ_minus_x2) - quad_form(x2,P,x2)
-
-    #solve for (Δx,Δz)
-    #-----------
-    lhs.τ  = tau_num/tau_den
-    @. lhs.x = x1 + lhs.τ * x2
-    @. lhs.z = z1 + lhs.τ * z2
-
-
-    #solve for Δs
-    #-------------
-    # compute the linear term HₛΔz, where Hs = WᵀW for symmetric
-    # cones and Hs = μH(z) for asymmetric cones
-    mul_Hs!(cones,lhs.s,lhs.z,workz)
-    @. lhs.s = -(lhs.s + Δs_const_term)
-
-    #solve for Δκ
-    #--------------
-    lhs.κ = -(rhs.κ + variables.κ * lhs.τ) / variables.τ
-
-    # we don't check the validity of anything
-    # after the KKT solve, so just return is_success
-    # without further validation
-    return is_success
+    return
 
 end

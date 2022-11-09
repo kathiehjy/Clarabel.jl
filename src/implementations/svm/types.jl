@@ -8,7 +8,7 @@
 # ---------------
 
 mutable struct SvmProblemData{T} <: AbstractProblemData{T}
-
+    D::AbstractMatrix{T}
     x::AbstractMatrix{T}  # Data features x
     y::Vector{T}          # Data labels y
     Y::AbstractMatrix{T}  # yx
@@ -20,16 +20,16 @@ mutable struct SvmProblemData{T} <: AbstractProblemData{T}
         D::AbstractMatrix{T},
         C::T,
     ) where {T}    # D in {x | y form}
-
+        D = deepcopy(D)
         x = deepcopy(D[:,1:end-1])
         y = deepcopy(D[:,end])
-        Y = zeros(size(D))
+        Y = zeros(size(x))
         for i in range(1,length(y))
             Y[i,:] = x[i,:] .* y[i]
         end
         C = C
-        n = size(D, 2) - 1
-        N = size(D, 1)
+        (N, n) = size(D)   # N - number of data points
+        n = n - 1          # n - number of features
         new(x, y, Y, C, n, N)
     end
 
@@ -55,16 +55,17 @@ mutable struct SvmVariables{T} <: AbstractVariables{T}
 
 
     function SvmVariables{T}(
-        n::Integer,        
-        cones::CompositeCone{T}
+        n::Integer, # number of features     
+        N::Integer  # number of data points
     ) where {T}   
-        
+        """ ξ,q,λ1 and λ2 are all NonnegativeCone with dimension of N 
+        """
         w = Vector{T}(undef,n)
         b = T(1)
-        ξ = ConicVector{T}(cones)
-        q = ConicVector{T}(cones)
-        λ1 = ConicVector{T}(cones)
-        λ2 = ConicVector{T}(cones)
+        ξ = NonnegativeConeT(N)
+        q = NonnegativeConeT(N)
+        λ1 = NonnegativeConeT(N)
+        λ2 = NonnegativeConeT(N)
         new(w, b, ξ, q, λ1, λ2)
     end
 
@@ -86,9 +87,9 @@ mutable struct SvmResiduals{T} <: AbstractResiduals{T}
     rλ2::T
 
     function SvmResiduals{T}(
-        n::Integer,
+        n::Integer, 
         N::Integer
-        ) where {T}
+    ) where {T}
 
         rw = Vector{T}(undef,n)
         rξ = Vector{T}(undef,N)
@@ -109,7 +110,7 @@ SvmResiduals(args...) = SvmResiduals{DefaultFloat}(args...)
 # ----------------------
 
 mutable struct SvmInfo{T} <: AbstractInfo{T}
-# Same as the default one 
+# Same as the default one, all these information is needed 
     μ::T
     sigma::T
     step_length::T

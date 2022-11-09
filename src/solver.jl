@@ -195,6 +195,7 @@ function solve!(
             #update the residuals
             #--------------
             residuals_update!(s.residuals,s.variables,s.data)
+            
 
             #calculate duality gap (scaled)
             #--------------

@@ -2,11 +2,9 @@ using LinearAlgebra
 
 function variables_calc_mu(
     variables::SvmVariables{T},
-    residuals::SvmResiduals{T},
-    cones::CompositeCone{T}
 ) where {T}
-
-  μ = (variables.λ1 ⋅ variables.ξ + variables.λ2 ⋅ variables.q)/(2 * cones.degree)
+  N = length(variables.λ1)
+  μ = (variables.λ1 ⋅ variables.ξ + variables.λ2 ⋅ variables.q)/(2 * N)
 
   return μ
 end
@@ -90,7 +88,7 @@ function variables_affine_step_rhs!(
     d::SvmVariables{T},             # rhs of Newton's equation
     r::SvmResiduals{T},             # residual
     variables::SvmVariables{T},     # Value of the problem variable at each iterate
-    cones::CompositeCone{T}
+
 ) where{T}
 
     @. d.w     =  r.rw
@@ -110,7 +108,6 @@ function variables_combined_step_rhs!(
     d::SvmVariables{T},             # rhs of Newton's equation
     r::SvmResiduals{T},             # residual
     variables::SvmVariables{T},     # Value of the problem variable at each iterate
-    cones::CompositeCone{T},
     step::SvmVariables{T},          # affine direction term
     σ::T,
     μ::T
@@ -143,7 +140,6 @@ end
 function variables_unit_initialization!(
     Data::SvmProblemData{T}
     variables::SvmVariables{T},
-    cones::CompositeCone{T}
 ) where {T}
 
     variables.w .= zeros(T,1,Data.n)
