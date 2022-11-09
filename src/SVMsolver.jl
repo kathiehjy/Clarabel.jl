@@ -1,4 +1,3 @@
-include("./settings.jl")
 # -------------------------------------
 # utility constructor that includes
 # both object creation and setup
@@ -160,7 +159,7 @@ function solve!(
 
             #calculate duality gap (scaled)
             #--------------
-            μ = variables_calc_mu(s.variables, s.residuals, s.cones)
+            μ = variables_calc_mu(s.variables)
 
             # record scalar values from most recent iteration.
             # This captures μ at iteration zero.  
@@ -433,3 +432,6 @@ end
 
 get_solution(s::Solver{T}) where {T} = s.solution
 get_info(s::Solver{T}) where {T} = s.info
+
+
+
