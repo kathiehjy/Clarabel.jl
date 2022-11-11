@@ -30,20 +30,20 @@ All data matrices must be sparse.
 
 To solve the problem, you must make a subsequent call to [`solve!`](@ref)
 """
-function setup!(s,D,C,settings::Settings)
+function svm_setup!(s,D,C,settings::Settings)
     #this allows total override of settings during setup
     s.settings = settings
-    setup!(s,D,C)
+    svm_setup!(s,D,C)
 end
 
-function setup!(s,D,C; kwargs...)
+function svm_setup!(s,D,C; kwargs...)
     #this allows override of individual settings during setup
     settings_populate!(s.settings, Dict(kwargs))
     setup!(s,D,C)
 end
 
 # main setup function
-function setup!(
+function svm_setup!(
     s::Solver{T},
     D::AbstractMatrix{T},
     C::T     # No need to pass in cone as for QP, the only cone that will be used here is the NonnegativeConeT, no dof
