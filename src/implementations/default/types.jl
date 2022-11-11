@@ -32,13 +32,7 @@ end
 
 DefaultVariables(args...) = DefaultVariables{DefaultFloat}(args...)
 
-# Scaling strategy for variables.  Defined
-# here to avoid errors due to order of includes
 
-@enum ScalingStrategy begin
-    PrimalDual = 0
-    Dual       = 1
-end
 
 
 # ---------------

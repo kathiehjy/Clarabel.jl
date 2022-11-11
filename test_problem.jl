@@ -1,3 +1,4 @@
+using Clarabel
 # Toy Example for svm problem
 D = [1. 1 1;-1 -1 -1]
 C = 1000.   #Close to strict Constraint
@@ -7,3 +8,4 @@ C = 1000.   #Close to strict Constraint
 settings = Clarabel.Settings(verbose = true)
 solver   = Clarabel.Solver()
 Clarabel.svm_setup!(solver, D, C, settings)
+

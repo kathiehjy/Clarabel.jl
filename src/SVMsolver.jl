@@ -39,7 +39,7 @@ end
 function svm_setup!(s,D,C; kwargs...)
     #this allows override of individual settings during setup
     settings_populate!(s.settings, Dict(kwargs))
-    setup!(s,D,C)
+    svm_setup!(s,D,C)
 end
 
 # main setup function
@@ -54,7 +54,7 @@ function svm_setup!(
 
     @timeit s.timers "setup!" begin
         N = length(D)
-        s.cones  = NonnegativeConeT(4*N)
+        s.cones  = NonnegativeCone{T}(4*N)
         s.data   = SvmProblemData{T}(D,C)   # Need for dimension or sanity check for SvmProblem
 
         s.variables = SvmVariables{T}(s.data.n,s.data.N)

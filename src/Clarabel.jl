@@ -29,12 +29,12 @@ module Clarabel
     include("./kktsolvers/kktsolver_directldl.jl")
 
     #default solver components implementation
-    include("./implementations/default/include.jl")
+    #include("./implementations/default/include.jl")
     #<add other problem type implementations here>
-    #include("./implementations/<whatever>/include.jl")
+    include("./implementations/svm/include.jl")
 
     # printing and top level solver
-    include("./info_print.jl")
+    #include("./info_print.jl")
     include("./SVMsolver.jl")
 
     #conic constraints.  Additional
@@ -54,11 +54,11 @@ module Clarabel
     include("./utils/mathutils.jl")
     include("./utils/csc_assembly.jl")
 
-    #MathOptInterface for JuMP/Convex.jl
-    module MOImodule
-         include("./MOI_wrapper/MOI_wrapper.jl")
-    end
-    const Optimizer{T} = Clarabel.MOImodule.Optimizer{T}
+    # #MathOptInterface for JuMP/Convex.jl
+    # module MOImodule
+    #      include("./MOI_wrapper/MOI_wrapper.jl")
+    # end
+    # const Optimizer{T} = Clarabel.MOImodule.Optimizer{T}
 
 end
 

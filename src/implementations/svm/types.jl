@@ -30,7 +30,7 @@ mutable struct SvmProblemData{T} <: AbstractProblemData{T}
         C = C
         (N, n) = size(D)   # N - number of data points
         n = n - 1          # n - number of features
-        new(x, y, Y, C, n, N)
+        new(D, x, y, Y, C, n, N)
     end
 
 end
@@ -139,7 +139,7 @@ mutable struct SvmInfo{T} <: AbstractInfo{T}
     function SvmInfo{T}() where {T}
 
         prevvals = ntuple(x->floatmax(T), 6);
-        new((ntuple(x->0, fieldcount(DefaultInfo)-6-1)...,prevvals...,UNSOLVED)...)
+        new((ntuple(x->0, fieldcount(SvmInfo)-6-1)...,prevvals...,UNSOLVED)...)
 
     end
 

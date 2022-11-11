@@ -31,7 +31,7 @@ function kkt_solve!(
     lhs::SvmVariables{T},      # Δ values, store the updated values of steps
     data::SvmProblemData{T},   # Store the problem formulation to set up the coefficient matrix
     variables::SvmVariables{T},   # Value of system variable from previous iteration
-    residuals::SvmResiduals{T}
+    residuals::SvmResiduals{T},
     steptype::Symbol   #:affine or :combined
 ) where{T}
 """variable means the value at each iteration, not the size of the step

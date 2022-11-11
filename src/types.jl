@@ -13,6 +13,14 @@ abstract type AbstractInfo{T <: AbstractFloat} end
 abstract type AbstractSolution{T <: AbstractFloat} end
 abstract type AbstractSolver{T <: AbstractFloat}   end
 
+# Scaling strategy for variables.  Defined
+# here to avoid errors due to order of includes
+
+@enum ScalingStrategy begin
+    PrimalDual = 0
+    Dual       = 1
+end
+
 # -------------------------------------
 # top level solver type
 # -------------------------------------
@@ -28,7 +36,7 @@ mutable struct Solver{T <: AbstractFloat} <: AbstractSolver{T}
 
     data::Union{AbstractProblemData{T},Nothing}
     variables::Union{AbstractVariables{T},Nothing}
-    cones::Union{CompositeCone{T},Nothing}
+    cones::Union{AbstractCone{T},Nothing}
     residuals::Union{AbstractResiduals{T},Nothing}
     kktsystem::Union{AbstractKKTSystem{T},Nothing}
     info::Union{AbstractInfo{T},Nothing}

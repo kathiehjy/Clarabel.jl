@@ -138,7 +138,7 @@ end
 # Calls unit initialization on all conic variables and zeros
 # the primal variables.   Used for nonsymmetric problems.
 function variables_unit_initialization!(
-    Data::SvmProblemData{T}
+    Data::SvmProblemData{T},
     variables::SvmVariables{T},
 ) where {T}
 
@@ -152,7 +152,7 @@ end
 
 function variables_finalize!(
     variables::SvmVariables{T},
-    equil::SvmEquilibration{T},
+    equil,
     status::SolverStatus
 ) where {T}
 
