@@ -6,7 +6,7 @@ function residuals_update!(
 ) where {T}
 
     residuals.rw .= variables.w - transpose(data.Y) * variables.λ2
-    residuals.rξ .= variables.ξ + data.Y * variables.w - variable.b * data.y - variables.q - ones(T, 1, data.N)
+    residuals.rξ .= variables.ξ + data.Y * variables.w - variable.b * data.y - variables.q - ones(T,data.N,1)
     residuals.rλ1.= -variables.λ1 - variables.λ2 + ones(T, 1, data.N) * data.C
     residuals.rλ2 = transpose(data.y) * variables.λ2
 

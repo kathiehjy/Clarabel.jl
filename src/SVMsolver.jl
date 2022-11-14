@@ -9,7 +9,7 @@ function Solver(
 ) where{T <: AbstractFloat}
 
     s = Solver{T}()
-    setup!(s,D,C,kwargs...)
+    svm_setup!(s,D,C,kwargs...)
     return s
 end
 
@@ -84,6 +84,8 @@ function svm_setup!(
     return s
 end
 
+
+#=
 # sanity check problem dimensions passed by user
 """Sanity check not need for SvmProblem"""
 function _check_dimensions(P,q,A,b,cones)
@@ -99,6 +101,7 @@ function _check_dimensions(P,q,A,b,cones)
     size(P)[1] == size(P)[2] || throw(DimensionMismatch("P not square."))
 
 end
+=#
 
 
 # an enum for reporting strategy checkpointing
@@ -128,7 +131,7 @@ function solve!(
     α = zero(T)
     μ = typemax(T)
 
-    # solver release info, solver config
+#=     # solver release info, solver config
     # problem dimensions, cone type etc
     @notimeit begin
         print_banner(s.settings.verbose)
@@ -137,6 +140,7 @@ function solve!(
     end
 
     info_reset!(s.info,s.timers)
+=#
 
     @timeit s.timers "solve!" begin
 
@@ -163,8 +167,9 @@ function solve!(
             μ = variables_calc_mu(s.variables)
 
             # record scalar values from most recent iteration.
-            # This captures μ at iteration zero.  
-            info_save_scalars(s.info, μ, α, σ, iter)
+            # This captures μ at iteration zero. 
+
+#=            info_save_scalars(s.info, μ, α, σ, iter)
 
             #convergence check and printing
             #--------------
@@ -183,6 +188,7 @@ function solve!(
                 elseif action === Update; continue; 
                 end
             end # allows continuation if new strategy provided
+=#
 
             #increment counter here because we only count
             #iterations that produce a KKT update 
@@ -301,13 +307,13 @@ function solver_default_start!(s::Solver{T}) where {T}
         #Refactor
         kkt_update!(s.kktsystem,s.data,s.cones)
         #solve for primal/dual initial points via KKT
-        kkt_solve_initial_point!(s.kktsystem,s.variables,s.data)
+        kkt_solve_initial_point!(s.variables)
         #fix up (z,s) so that they are in the cone
         variables_symmetric_initialization!(s.variables, s.cones)
 
     else
         #Assigns unit (z,s) and zeros the primal variables 
-        variables_unit_initialization!(s.variables, s.cones)
+        variables_unit_initialization!(s.variables)
     end
 
     return nothing

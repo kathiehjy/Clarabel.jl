@@ -6,6 +6,7 @@ function kkt_update!(
 
     #update the linear solver with new cones
     #kkt returns the ldl factorisation results and store the factor in is_success
+    return
     is_success  = kktsolver_update!(kktsystem.kktsolver,cones)  
     
     return is_success
@@ -13,13 +14,10 @@ end
 
 
 function kkt_solve_initial_point!(
-    kktsystem::SvmKKTSystem{T},
     variables::SvmVariables{T},
-    data::SvmProblemData{T},
-    cones::CompositeCone{T}
 ) where{T}
 
-    variables_unit_initialization!(variables, cones)
+    variables_unit_initialization!(variables)
     
     return nothing
 

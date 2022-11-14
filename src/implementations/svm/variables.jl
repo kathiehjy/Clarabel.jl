@@ -131,23 +131,31 @@ function variables_symmetric_initialization!(
 ) where {T}
     """Leave empty
     """
-    error("Function not yet implemented")
+    shift_to_cone!(cones,variables.q)
+    shift_to_cone!(cones,variables.ξ)
+    shift_to_cone!(cones,variables.λ1)
+    shift_to_cone!(cones,variables.λ2)
+
+    variables.q .= 1
+    variables.ξ .= 1
+    variables.λ1 .= 1
+    variables.λ2 .= 1
+    
 end
 
 
 # Calls unit initialization on all conic variables and zeros
 # the primal variables.   Used for nonsymmetric problems.
 function variables_unit_initialization!(
-    Data::SvmProblemData{T},
     variables::SvmVariables{T},
 ) where {T}
 
-    variables.w .= zeros(T,1,Data.n)
+    variables.w .= zero(T)
     variables.b  = zero(T)
-    variables.ξ .= ones(T,1,Data.N)
-    variables.q .= ones(T,1,Data.N)
-    variables.λ1 .= ones(T,1,Data.N)
-    variables.λ2 .= ones(T,1,Data.N)
+    variables.ξ .= one(T)
+    variables.q .= one(T)
+    variables.λ1 .= one(T)
+    variables.λ2 .= one(T)
 end
 
 function variables_finalize!(
