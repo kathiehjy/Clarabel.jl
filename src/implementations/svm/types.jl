@@ -63,6 +63,7 @@ mutable struct SvmVariables{T} <: AbstractVariables{T}
         """
         w = Vector{T}(undef,n)
         b = T(1)
+        cones = CompositeCone{T}([NonnegativeCone{T}(N)])
         ξ  = ConicVector{T}(cones)
         q  = ConicVector{T}(cones)
         λ1 = ConicVector{T}(cones)

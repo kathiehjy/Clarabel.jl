@@ -49,6 +49,11 @@ end
     @inbounds s.vec[i] = T(v)
 end
 
+# Extract the vector of Conic Vector to allow matrix multiplication
+function GetVector(s::ConicVector{T}) where{T}
+    return s.vec
+end
+
 Base.adjoint(s::ConicVector{T}) where{T} = adjoint(s.vec)
 Base.iterate(s::ConicVector{T}) where{T} = iterate(s.vec)
 Base.eltype(s::ConicVector{T}) where{T} = eltype(s.vec)
@@ -94,3 +99,9 @@ LinearAlgebra.mul!(
     C::AbstractVector,
     A::Adjoint{<:Any, <:AbstractVecOrMat},
     B::ConicVector, α::Number, β::Number) = mul!(C, A, B.vec, α, β)
+
+#= # define a mul! with 3 input, including the conic vector
+LinearAlgebra.mul!(
+    C::AbstractVector,
+    A::AbstractVecOrMat,
+    B::ConicVector) = mul!(C, A, B.vec)  =#

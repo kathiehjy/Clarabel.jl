@@ -152,6 +152,8 @@ function variables_unit_initialization!(
 
     variables.w .= zero(T)
     variables.b  = zero(T)
+    # ξ,q,λ1 and λ2 are known to be NonnegativeCone,
+    # so no need to call generic initilization method for conic objects
     variables.ξ .= one(T)
     variables.q .= one(T)
     variables.λ1 .= one(T)

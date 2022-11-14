@@ -165,7 +165,7 @@ function solve!(
             #calculate duality gap (scaled)
             #--------------
             μ = variables_calc_mu(s.variables)
-
+            print("yes")
             # record scalar values from most recent iteration.
             # This captures μ at iteration zero. 
 
