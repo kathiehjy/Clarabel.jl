@@ -36,7 +36,7 @@ mutable struct Solver{T <: AbstractFloat} <: AbstractSolver{T}
 
     data::Union{AbstractProblemData{T},Nothing}
     variables::Union{AbstractVariables{T},Nothing}
-    cones::Union{AbstractCone{T},Nothing}
+    cones::Union{CompositeCone{T},Nothing}
     residuals::Union{AbstractResiduals{T},Nothing}
     kktsystem::Union{AbstractKKTSystem{T},Nothing}
     info::Union{AbstractInfo{T},Nothing}

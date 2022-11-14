@@ -54,10 +54,11 @@ function svm_setup!(
 
     @timeit s.timers "setup!" begin
         N = length(D)
-        s.cones  = NonnegativeCone{T}(4*N)
+        # Construct cones as composite cones
+        s.cones  = CompositeCone{T}([NonnegativeCone{T}(N), NonnegativeCone{T}(N), NonnegativeCone{T}(N), NonnegativeCone{T}(N)])
         s.data   = SvmProblemData{T}(D,C)   # Need for dimension or sanity check for SvmProblem
 
-        s.variables = SvmVariables{T}(s.data.n,s.data.N)
+        s.variables = SvmVariables{T}(s.data.n,s.data.N,s.cones)
         s.residuals = SvmResiduals{T}(s.data.n,s.data.N)
 
         #equilibrate problem data immediately on setup.
@@ -69,11 +70,11 @@ function svm_setup!(
         end
 
         # work variables for assembling step direction LHS/RHS
-        s.step_rhs  = SvmVariables{T}(s.data.n,s.data.N)
-        s.step_lhs  = SvmVariables{T}(s.data.n,s.data.N)
+        s.step_rhs  = SvmVariables{T}(s.data.n,s.data.N,s.cones)
+        s.step_lhs  = SvmVariables{T}(s.data.n,s.data.N,s.cones)
 
         # a saved copy of the previous iterate
-        s.prev_vars = SvmVariables{T}(s.data.n,s.data.N)
+        s.prev_vars = SvmVariables{T}(s.data.n,s.data.N,s.cones)
 
         # user facing results go here
         s.solution  = SvmSolution{T}(s.data.n,s.data.N)

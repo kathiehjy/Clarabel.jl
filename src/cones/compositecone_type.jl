@@ -9,7 +9,7 @@ struct CompositeCone{T} <: AbstractCone{T}
     cones::Vector{AbstractCone{T}}
 
     #API type specs and count of each cone type
-    cone_specs::Vector{SupportedCone}
+    cone_specs
     types::Vector{DataType}
     type_counts::Dict{DataType,Int}
 
@@ -25,7 +25,9 @@ struct CompositeCone{T} <: AbstractCone{T}
     _is_symmetric::Bool
 
     function CompositeCone{T}(cone_specs::Vector{<:SupportedCone}) where {T}
-
+        """Constructor of CompositeCone when using Clarabel API, 
+        i.e. user interface, which input SupportedCone
+        """
         #make copy to protect from user interference after setup,
         #and explicitly cast as the abstract type.  This prevents
         #errors arising from input vectors that are all the same cone,
@@ -34,7 +36,8 @@ struct CompositeCone{T} <: AbstractCone{T}
 
         ncones = length(cone_specs)
         cones  = Vector{AbstractCone{T}}(undef,ncones)
-        types = Vector{DataType}(undef,ncones)
+        # The problem is formulated such that the different types of cones equals the number of cones
+        types = Vector{DataType}(undef,ncones)   
 
         #count the number of each cone type
         type_counts = Dict{DataType,Int}()
@@ -58,6 +61,53 @@ struct CompositeCone{T} <: AbstractCone{T}
                 cones[i] = ConeDict[typeof(cone_specs[i])]{T}(cone_specs[i].dim)
             end
         end
+
+        #count up elements and degree
+        numel  = sum(cone -> Clarabel.numel(cone), cones; init = 0)
+        degree = sum(cone -> Clarabel.degree(cone), cones; init = 0)
+
+        #headidx gives the index of the first element
+        #of each constituent cone
+        headidx = Vector{Int}(undef,length(cones))
+        _make_headidx!(headidx,cones)
+
+        return new(cones,cone_specs,types,type_counts,numel,degree,headidx,_is_symmetric)
+    end
+    
+    function CompositeCone{T}(cone_specs::Vector{<:AbstractCone{T}}) where {T}
+        """Constructor of CompositeCone when using Clarabel API, 
+        i.e. user interface, which input AbstractCone.
+        This constructor is only for SVM problem, where there is only one type of Cones
+        
+        types = Vector{DataType}(undef,1)
+        """
+
+
+        #make copy to protect from user interference after setup,
+        #and explicitly cast as the abstract type.  This prevents
+        #errors arising from input vectors that are all the same cone,
+        #and therefore more concretely typed than we want
+        cone_specs = Vector{AbstractCone{T}}(cone_specs)
+
+        ncones = length(cone_specs)
+        cones  = Vector{AbstractCone{T}}(undef,ncones)
+        types = Vector{DataType}(undef,ncones)
+
+        #count the number of each cone type
+        type_counts = Dict{DataType,Int}()
+        for coneT in keys(ConeDict)
+            type_counts[coneT] = 0
+        end
+        type_counts[NonnegativeConeT] = ncones
+
+        #assumed symmetric to start
+        _is_symmetric = true
+
+        #create cones with the given dims
+        for i in eachindex(cone_specs)
+            types[i] = typeof(cone_specs[i])
+        end
+        cones = deepcopy(cone_specs)
 
         #count up elements and degree
         numel  = sum(cone -> Clarabel.numel(cone), cones; init = 0)

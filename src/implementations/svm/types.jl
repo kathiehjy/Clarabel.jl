@@ -56,16 +56,17 @@ mutable struct SvmVariables{T} <: AbstractVariables{T}
 
     function SvmVariables{T}(
         n::Integer, # number of features     
-        N::Integer  # number of data points
+        N::Integer, # number of data points
+        cones::CompositeCone{T}
     ) where {T}   
         """ ξ,q,λ1 and λ2 are all NonnegativeCone with dimension of N 
         """
         w = Vector{T}(undef,n)
         b = T(1)
-        ξ = NonnegativeConeT(N)
-        q = NonnegativeConeT(N)
-        λ1 = NonnegativeConeT(N)
-        λ2 = NonnegativeConeT(N)
+        ξ  = ConicVector{T}(cones)
+        q  = ConicVector{T}(cones)
+        λ1 = ConicVector{T}(cones)
+        λ2 = ConicVector{T}(cones)
         new(w, b, ξ, q, λ1, λ2)
     end
 
@@ -156,7 +157,7 @@ mutable struct SvmKKTSystem{T} <: AbstractKKTSystem{T}
     Not sure
 """
     #the KKT system solver
-    kktsolver::AbstractKKTSolver{T}
+    # kktsolver::AbstractKKTSolver{T}
 
     #solution vector for reduced KKT system 
     w::Vector{T}
@@ -172,14 +173,15 @@ mutable struct SvmKKTSystem{T} <: AbstractKKTSystem{T}
         n = data.n
 
         #create the linear solver.  Always LDL for now
-        kktsolver = DirectLDLKKTSolver{T}(data.P,data.A,cones,m,n,settings)
+        """That's the point of create the solver if kktsystem.jl already have the method to solve the system"""
+        # kktsolver = DirectLDLKKTSolver{T}(data.P,data.A,cones,m,n,settings)   
 
         #the LHS of the reduced solve
         w   = Vector{T}(undef,n)
         b   = T(1)
 
 
-        return new(kktsolver,w,b)
+        return new(w,b)
 
     end
 
