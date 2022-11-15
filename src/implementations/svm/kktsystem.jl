@@ -6,7 +6,7 @@ function kkt_update!(
 
     #update the linear solver with new cones
     #kkt returns the ldl factorisation results and store the factor in is_success
-    return
+    return True
     is_success  = kktsolver_update!(kktsystem.kktsolver,cones)  
     
     return is_success
@@ -94,6 +94,6 @@ function kkt_solve!(
     lhs.w  = Δw
     lhs.b  = Δb
 
-    return
+    return True
 
 end

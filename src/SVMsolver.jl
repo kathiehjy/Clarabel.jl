@@ -165,7 +165,7 @@ function solve!(
             #calculate duality gap (scaled)
             #--------------
             μ = variables_calc_mu(s.variables)
-            print("yes")
+
             # record scalar values from most recent iteration.
             # This captures μ at iteration zero. 
 
@@ -194,10 +194,11 @@ function solve!(
             #iterations that produce a KKT update 
             iter += 1
 
+            """No scaling for SVM problem
             #update the scalings
             #--------------
             variables_scale_cones!(s.variables,s.cones,μ,scaling)
-
+            """
 
             #Update the KKT system and the constant parts of its solution.
             #Keep track of the success of each step that calls KKT
@@ -211,9 +212,12 @@ function solve!(
             #--------------
             variables_affine_step_rhs!(
                 s.step_rhs, s.residuals,
-                s.variables, s.cones
+                s.variables
             )
 
+
+            """kkt_solver.jl directly solve the reduced system,
+            is it still needed to check for existence"""
             @timeit s.timers "kkt solve" begin
             is_kkt_solve_success = is_kkt_solve_success && 
                 kkt_solve!(

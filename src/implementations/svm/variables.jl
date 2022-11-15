@@ -4,6 +4,7 @@ function variables_calc_mu(
     variables::SvmVariables{T},
 ) where {T}
   N = length(variables.λ1)
+  # No need to use GetVector in here as dot product between ConicVector has been defined
   μ = (variables.λ1 ⋅ variables.ξ + variables.λ2 ⋅ variables.q)/(2 * N)
 
   return μ

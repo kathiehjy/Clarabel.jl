@@ -8,7 +8,7 @@ function residuals_update!(
     residuals.rw = variables.w - transpose(data.Y) * GetVector(variables.λ2)
     residuals.rξ = GetVector(variables.ξ) + data.Y * variables.w - variables.b * data.y - GetVector(variables.q) .- one(T)
     residuals.rλ1 = -GetVector(variables.λ1) - GetVector(variables.λ2) .+ one(T) * data.C
-    residuals.rλ2 = transpose(data.y) * GetVector(variables.λ2)
+    residuals.rλ2 = data.y ⋅ variables.λ2
 
   return nothing
 end
