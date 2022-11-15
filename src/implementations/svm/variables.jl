@@ -55,7 +55,7 @@ function variables_copy_from(dest::SvmVariables{T},src::SvmVariables{T}) where {
     dest.ξ .= src.ξ
     dest.λ1.= src.λ1
     dest.λ2.= src.λ2
-    dest.q .= srs.q
+    dest.q .= src.q
 end
 
 function variables_scale_cones!(
@@ -86,8 +86,8 @@ end
 
 
 function variables_affine_step_rhs!(
-    d::SvmVariables{T},             # rhs of Newton's equation
-    r::SvmResiduals{T},             # residual
+    d::SvmVariables{T},             # store rhs of Newton's equation
+    r::SvmResiduals{T},             # current residuals
     variables::SvmVariables{T},     # Value of the problem variable at each iterate
 
 ) where{T}
@@ -113,13 +113,14 @@ function variables_combined_step_rhs!(
     σ::T,
     μ::T
 ) where {T}
-    N = length(d.q)
-    @. d.w  = (one(T) - σ)*r.rw
-    @. d.ξ  = (one(T) - σ)*r.rξ
-    @. d.λ1 = (one(T) - σ)*r.rλ1
-    d.b     = (one(T) - σ)*r.rλ2
-    d.λ2   .= diagm(variables.λ2)*variables.q-ones(T,1,N)*σ*μ-diagm(step.q)*step.λ2
-    d.q    .= diagm(variables.λ1)*variables.ξ-ones(T,1,N)*σ*μ-diagm(step.λ1)*step.ξ
+
+    dotσμ = σ * μ
+    @. d.w  = (one(T) - dotσμ)*r.rw
+    @. d.ξ  = (one(T) - dotσμ)*r.rξ
+    @. d.λ1 = (one(T) - dotσμ)*r.rλ1
+    d.b     = (one(T) - dotσμ)*r.rλ2
+    d.λ2   .= diagm(variables.λ2) * variables.q + diagm(step.q)*step.λ2 .+ one(T)*dotσμ
+    d.q    .= diagm(variables.λ1) * variables.ξ + diagm(step.λ1)*step.ξ .+ one(T)*dotσμ
 
 end
 

@@ -6,7 +6,7 @@ function kkt_update!(
 
     #update the linear solver with new cones
     #kkt returns the ldl factorisation results and store the factor in is_success
-    return True
+    return true
     is_success  = kktsolver_update!(kktsystem.kktsolver,cones)  
     
     return is_success
@@ -27,22 +27,27 @@ end
 function kkt_solve!(
     kktsystem::SvmKKTSystem{T},
     lhs::SvmVariables{T},      # Δ values, store the updated values of steps
+    rhs::SvmVariables{T},
     data::SvmProblemData{T},   # Store the problem formulation to set up the coefficient matrix
     variables::SvmVariables{T},   # Value of system variable from previous iteration
-    residuals::SvmResiduals{T},
     steptype::Symbol   #:affine or :combined
 ) where{T}
 """variable means the value at each iteration, not the size of the step
 """
-
-    rλ2 = residuals.rλ2
-    rλ1 = residuals.rλ1
-    rξ  = residuals.rξ
-    rw  = residuals.rw
     λ1  = variables.λ1
     λ2  = variables.λ2
     q   = variables.q
     ξ   = variables.ξ
+
+    # residual, i.e., rhs of the linear system changes for affine and combined steptype
+    """Simplify this after pass in the step_rhs as an input to this function"""
+    rλ2 = rhs.b
+    rλ1 = rhs.λ1
+    rξ  = rhs.ξ
+    rw  = rhs.w
+    const1 = rhs.λ2
+    const2 = rhs.q
+    
 
     n = data.n
     N = data.N
@@ -73,8 +78,9 @@ function kkt_solve!(
 
 
     # Construct the rhs of the linear system   rhs = [Trhs; Brhs]
-    Trhs = -rw + transpose(y)*D*(-rξ+ξ+inv(Dλ1)*Dξ*rλ1-q)
-    Brhs = -rλ2 .- transpose(s)*D*(-rξ+ξ+inv(Dλ1)*Dξ*rλ1-q)
+    reuse = -rξ+inv(Dλ1)*const2+inv(Dλ1)*Dξ*rλ1-inv(Dλ2)*const1
+    Trhs = -rw + transpose(y)*D*reuse
+    Brhs = -rλ2 .- transpose(s)*D*reuse
     rhs = vcat(Trhs, Brhs)
     result = inv(Linear_system_coef) * rhs      # result = [Δw; Δb]
     Δw = result[1:end-1]
@@ -87,13 +93,13 @@ function kkt_solve!(
     Δξ = -ξ - inv(Dλ1)*Dξ*Δλ1
     
     # Update the step size
-    lhs.λ1 = Δλ1
-    lhs.λ2 = Δλ2
-    lhs.q  = Δq
-    lhs.ξ  = Δξ
-    lhs.w  = Δw
-    lhs.b  = Δb
+    @. lhs.λ1 = Δλ1
+    @. lhs.λ2 = Δλ2
+    @. lhs.q  = Δq
+    @. lhs.ξ  = Δξ
+    @. lhs.w  = Δw
+       lhs.b  = Δb
 
-    return True
+    return true
 
 end

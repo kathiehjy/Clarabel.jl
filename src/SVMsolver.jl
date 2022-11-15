@@ -203,13 +203,16 @@ function solve!(
             #Update the KKT system and the constant parts of its solution.
             #Keep track of the success of each step that calls KKT
             #--------------
-
+            """Not used in here, didn't use the solver to solve for the system, only returns true"""
             @timeit s.timers "kkt update" begin
             is_kkt_solve_success = kkt_update!(s.kktsystem,s.data,s.cones)
             end
 
+
             #calculate the affine step
             #--------------
+            """Not sure how each term in the rhs of the system is mapped into the a variable object, 
+            it's not used by the kkt_solver currently"""
             variables_affine_step_rhs!(
                 s.step_rhs, s.residuals,
                 s.variables
@@ -222,8 +225,8 @@ function solve!(
             is_kkt_solve_success = is_kkt_solve_success && 
                 kkt_solve!(
                     s.kktsystem, s.step_lhs, s.step_rhs,
-                    s.data, s.variables, s.cones, :affine
-                )
+                    s.data, s.variables, :affine
+                )  # Solve for and Update s.step_lhs, which is the affine step size
             end
 
             # combined step only on affine step success 
@@ -238,7 +241,7 @@ function solve!(
                 #--------------
                 variables_combined_step_rhs!(
                     s.step_rhs, s.residuals,
-                    s.variables, s.cones,
+                    s.variables, 
                     s.step_lhs, σ, μ
                 )
 
@@ -246,7 +249,7 @@ function solve!(
                 is_kkt_solve_success =
                     kkt_solve!(
                         s.kktsystem, s.step_lhs, s.step_rhs,
-                        s.data, s.variables, s.cones, :combined
+                        s.data, s.variables, :combined
                     )
                 end
 
@@ -288,13 +291,13 @@ function solve!(
     # to recapture the scalars and print one last line 
     if(α == zero(T))
         info_save_scalars(s.info, μ, α, σ, iter)
-        @notimeit info_print_status(s.info,s.settings)
+        #@notimeit info_print_status(s.info,s.settings)
     end 
 
     info_finalize!(s.info,s.residuals,s.settings,s.timers)  #halts timers
     solution_finalize!(s.solution,s.data,s.variables,s.info,s.settings)
 
-    @notimeit info_print_footer(s.info,s.settings)
+    #@notimeit info_print_footer(s.info,s.settings)
 
     return s.solution
 end
@@ -333,6 +336,8 @@ function solver_get_step_length(s::Solver{T},steptype::Symbol,scaling::ScalingSt
     )
 
     # additional barrier function limits for asymmetric cones
+    """Since cones in SVM problem are NonnegativeCone, which is symmetric,
+    so the following won't get activated"""
     if (!is_symmetric(s.cones) && steptype == :combined && scaling == Dual)
         αinit = α
         α = solver_backtrack_step_to_barrier(s,αinit)

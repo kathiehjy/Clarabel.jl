@@ -32,6 +32,8 @@ function solving_reduced_kkt(
     Dq = Diagonal(q)
     D = inv(inv(Dλ2)*Dq + inv(Dλ1)*Dξ)
     
+    const1 = Dq * λ2
+    const2 = Dξ * λ1
     # Construct the linear coefficient of linear system
     I1 = Matrix(1.0I, n, n)     # The identity matrix added to the left top corner
     TL = transpose(y) * D * y   # LT -- stand for top left element
@@ -45,8 +47,9 @@ function solving_reduced_kkt(
     
 
     # Construct the rhs of the linear system   rhs = [Trhs; Brhs]
-    Trhs = -rw + transpose(y)*D*(-rξ+ξ+inv(Dλ1)*Dξ*rλ1-q)
-    Brhs = -rλ2 .- transpose(s)*D*(-rξ+ξ+inv(Dλ1)*Dξ*rλ1-q)
+    reuse = -rξ+inv(Dλ1)*const2+inv(Dλ1)*Dξ*rλ1-inv(Dλ2)*const1
+    Trhs = -rw + transpose(y)*D*reuse
+    Brhs = -rλ2 .- transpose(s)*D*reuse
     rhs = vcat(Trhs, Brhs)
     result = inv(Linear_system_coef) * rhs      # result = [Δw; Δb]
     Δw = result[1:end-1]
@@ -63,7 +66,7 @@ end
 
 
 #Example
-rλ1 = [2.0; 2; 3; 5; 3.0] * 0.02
+rλ1 = [2.0; 2; 3; 5; 3.0] * 0.05
 rλ2 = 5.0
 rξ = [1.0; 3; 8; 3; 5.0] * 0.03
 rw = [3.0; 2] * 0.02
