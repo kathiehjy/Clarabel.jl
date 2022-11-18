@@ -85,6 +85,7 @@ function svm_setup!(
 end
 
 
+"""No need to check dimension for SVM problem"""
 #=
 # sanity check problem dimensions passed by user
 """Sanity check not need for SvmProblem"""
@@ -131,7 +132,7 @@ function solve!(
     α = zero(T)
     μ = typemax(T)
 
-#=     # solver release info, solver config
+    # solver release info, solver config
     # problem dimensions, cone type etc
     @notimeit begin
         print_banner(s.settings.verbose)
@@ -140,7 +141,7 @@ function solve!(
     end
 
     info_reset!(s.info,s.timers)
-=#
+
 
     @timeit s.timers "solve!" begin
 
@@ -169,12 +170,12 @@ function solve!(
             # record scalar values from most recent iteration.
             # This captures μ at iteration zero. 
 
-#=            info_save_scalars(s.info, μ, α, σ, iter)
+            info_save_scalars(s.info, μ, α, σ, iter)
 
             #convergence check and printing
             #--------------
 
-            info_update!(
+#=            info_update!(
                 s.info,s.data,s.variables,
                 s.residuals,s.settings,s.timers
             )
@@ -193,6 +194,10 @@ function solve!(
             #increment counter here because we only count
             #iterations that produce a KKT update 
             iter += 1
+            println("ITER = ", iter)
+            if(iter > 20)
+                break
+            end 
 
             """No scaling for SVM problem
             #update the scalings
@@ -297,7 +302,7 @@ function solve!(
     info_finalize!(s.info,s.residuals,s.settings,s.timers)  #halts timers
     solution_finalize!(s.solution,s.data,s.variables,s.info,s.settings)
 
-    #@notimeit info_print_footer(s.info,s.settings)
+    @notimeit info_print_footer(s.info,s.settings)
 
     return s.solution
 end

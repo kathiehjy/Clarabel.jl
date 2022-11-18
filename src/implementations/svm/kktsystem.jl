@@ -82,7 +82,19 @@ function kkt_solve!(
     Trhs = -rw + transpose(y)*D*reuse
     Brhs = -rλ2 .- transpose(s)*D*reuse
     rhs = vcat(Trhs, Brhs)
-    result = inv(Linear_system_coef) * rhs      # result = [Δw; Δb]
+    try 
+        result = (Linear_system_coef) \ rhs      # result = [Δw; Δb]
+    catch
+        println("D = ",D)
+        println("BR = ",BR)
+        println("λ1 = ",λ1)
+        println("λ2 = ",λ2)
+        println("q = ",q)
+        println("ξ = ",ξ)
+
+        error("Foo")
+    end 
+    result = (Linear_system_coef) \ rhs 
     Δw = result[1:end-1]
     Δb = result[end]
 

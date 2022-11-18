@@ -35,6 +35,7 @@ module Clarabel
 
     # printing and top level solver
     #include("./info_print.jl")
+    include("./SVMinfo_print.jl")
     include("./SVMsolver.jl")
 
     #conic constraints.  Additional

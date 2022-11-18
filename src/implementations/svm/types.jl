@@ -121,11 +121,11 @@ mutable struct SvmInfo{T} <: AbstractInfo{T}
     cost_dual::T
     res_primal::T
     res_dual::T
-    res_primal_inf::T
-    res_dual_inf::T
+    # res_primal_inf::T  No need for SVM problem as it's always primal and dual feasible
+    # res_dual_inf::T
     gap_abs::T
     gap_rel::T
-    ktratio::T
+    # ktratio::T
 
     # previous iterate
     prev_cost_primal::T
@@ -163,6 +163,7 @@ mutable struct SvmKKTSystem{T} <: AbstractKKTSystem{T}
     #solution vector for reduced KKT system 
     w::Vector{T}
     b::T
+    
 
     function SvmKKTSystem{T}(
         data::SvmProblemData{T},
