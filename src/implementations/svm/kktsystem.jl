@@ -34,19 +34,19 @@ function kkt_solve!(
 ) where{T}
 """variable means the value at each iteration, not the size of the step
 """
-    λ1  = variables.λ1
-    λ2  = variables.λ2
-    q   = variables.q
-    ξ   = variables.ξ
+    kktsystem.λ1  = deepcopy(variables.λ1)
+    kktsystem.λ2  = deepcopy(variables.λ2)
+    kktsystem.q   = deepcopy(variables.q)
+    kktsystem.ξ   = deepcopy(variables.ξ)
 
     # residual, i.e., rhs of the linear system changes for affine and combined steptype
     """Simplify this after pass in the step_rhs as an input to this function"""
-    rλ2 = rhs.b
-    rλ1 = rhs.λ1
-    rξ  = rhs.ξ
-    rw  = rhs.w
-    const1 = rhs.λ2
-    const2 = rhs.q
+    kktsystem.rλ2 = rhs.b
+    kktsystem.rλ1 = deepcopy(rhs.λ1)
+    kktsystem.rξ  = deepcopy(rhs.ξ)
+    kktsystem.rw  = deepcopy(rhs.w)
+    kktsystem.const1 = deepcopy(rhs.λ2)
+    kktsystem.const2 = deepcopy(rhs.q)
     
 
     n = data.n
@@ -59,10 +59,10 @@ function kkt_solve!(
 
     
     # Construct D, used repeatedly 
-    Dξ = Diagonal(ξ)
-    Dλ1 = Diagonal(λ1)
-    Dλ2 = Diagonal(λ2)
-    Dq = Diagonal(q)
+    Dξ = Diagonal(kktsystem.ξ)
+    Dλ1 = Diagonal(kktsystem.λ1)
+    Dλ2 = Diagonal(kktsystem.λ2)
+    Dq = Diagonal(kktsystem.q)
     D = inv(inv(Dλ2)*Dq + inv(Dλ1)*Dξ)
 
     # Construct the linear coefficient of linear system
@@ -78,19 +78,38 @@ function kkt_solve!(
 
 
     # Construct the rhs of the linear system   rhs = [Trhs; Brhs]
-    reuse = -rξ+inv(Dλ1)*const2+inv(Dλ1)*Dξ*rλ1-inv(Dλ2)*const1
-    Trhs = -rw + transpose(y)*D*reuse
-    Brhs = -rλ2 .- transpose(s)*D*reuse
+    reuse = -kktsystem.rξ+inv(Dλ1)*kktsystem.const2+inv(Dλ1)*Dξ*kktsystem.rλ1-inv(Dλ2)*kktsystem.const1
+    Trhs = -kktsystem.rw + transpose(y)*D*reuse
+    Brhs = -kktsystem.rλ2 .- transpose(s)*D*reuse
     rhs = vcat(Trhs, Brhs)
-    result = inv(Linear_system_coef) * rhs      # result = [Δw; Δb]
+
+    Factor = lu(Linear_system_coef)
+    result = Factor \ rhs
+    try 
+        # result = (Linear_system_coef) \ rhs      # result = [Δw; Δb]
+        result = Factor \ rhs
+    catch
+        println("D = ",D)
+        println("BR = ",BR)
+        println("λ1 = ",λ1)
+        println("λ2 = ",λ2)
+        println("q = ",q)
+        println("ξ = ",ξ)
+
+        error("Foo")
+    end 
+    # result = (Linear_system_coef) \ rhs 
+    result = Factor \ rhs
+
+
     Δw = result[1:end-1]
     Δb = result[end]
 
     # Solve for Δλ2, Δξ, Δq, Δλ1 given Δw, Δb
-    Δλ2 = D * (-rξ -y*Δw + ξ + inv(Dλ1)*Dξ*rλ1 - q + s.*Δb)
-    Δλ1 = rλ1 - Δλ2
-    Δq = -q - inv(Dλ2)*Dq*Δλ2
-    Δξ = -ξ - inv(Dλ1)*Dξ*Δλ1
+    Δλ2 = D * (-kktsystem.rξ -y*Δw + kktsystem.ξ + inv(Dλ1)*Dξ*kktsystem.rλ1 - kktsystem.q + s.*Δb)
+    Δλ1 = kktsystem.rλ1 - Δλ2
+    Δq = -kktsystem.q - inv(Dλ2)*Dq*Δλ2
+    Δξ = -kktsystem.ξ - inv(Dλ1)*Dξ*Δλ1
     
     # Update the step size
     @. lhs.λ1 = Δλ1

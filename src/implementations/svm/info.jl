@@ -7,7 +7,26 @@ function info_update!(
     timers::TimerOutput
 ) where {T}
 
-    error("Function not yet implemented.")
+    # Update the values for attributes of the SvmInfo
+    # μ, step_length, sigma, iterations are updated in info_save_scalars
+    info.cost_primal = 0.5*norm(variables.w)^2 + data.C*norm(variables.ξ)
+    info.cost_dual = -0.5*norm(transpose(data.Y)*GetVector(variables.λ2))^2 + norm(GetVector(variables.λ2))
+    # Using infinite norm to compute primal residual and dual residual
+    # info.res_primal = norm(residuals.rw,Inf)
+    # info.res_dual = max(norm(residuals.rξ,Inf),norm(residuals.rλ1,Inf),norm(residuals.rλ2,Inf))
+    info.res_primal = norm(residuals.rw)
+    info.res_dual = max(norm(residuals.rξ),norm(residuals.rλ1),norm(residuals.rλ2))
+
+    #absolute and relative gaps
+    info.gap_abs    = abs(info.cost_primal - info.cost_dual)
+    if(info.cost_primal > zero(T) && info.cost_dual < zero(T))
+        info.gap_rel = floatmax(T)
+    else
+        info.gap_rel = info.gap_abs / max(one(T),min(abs(info.cost_primal),abs(info.cost_dual)))
+    end
+
+    #κ/τ. For SVM problem κ = 0, τ = 1
+    info.ktratio = 0
 
 end
 
@@ -253,20 +272,24 @@ end
 
 function _is_primal_infeasible(info, residuals, tol_infeas_abs, tol_infeas_rel)
 
-    if (residuals.dot_bz < -tol_infeas_abs) &&
-        (info.res_primal_inf < -tol_infeas_rel * residuals.dot_bz)
-        return true
-    else
-        return false
-    end
+    return false
+
+    # if (residuals.dot_bz < -tol_infeas_abs) &&
+    #     (info.res_primal_inf < -tol_infeas_rel * residuals.dot_bz)
+    #     return true
+    # else
+    #     return false
+    # end
 end
 
 function _is_dual_infeasible(info, residuals, tol_infeas_abs, tol_infeas_rel)
 
-    if (residuals.dot_qx < -tol_infeas_abs) &&
-            (info.res_dual_inf < -tol_infeas_rel * residuals.dot_qx)
-        return true
-    else
-        return false
-    end
+    return false
+
+    # if (residuals.dot_qx < -tol_infeas_abs) &&
+    #         (info.res_dual_inf < -tol_infeas_rel * residuals.dot_qx)
+    #     return true
+    # else
+    #     return false
+    # end
 end

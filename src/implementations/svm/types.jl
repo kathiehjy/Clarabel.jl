@@ -121,8 +121,8 @@ mutable struct SvmInfo{T} <: AbstractInfo{T}
     cost_dual::T
     res_primal::T
     res_dual::T
-    res_primal_inf::T
-    res_dual_inf::T
+    # res_primal_inf::T   No need for SVM problem as it's always primal and dual feasible
+    # res_dual_inf::T
     gap_abs::T
     gap_rel::T
     ktratio::T
@@ -161,31 +161,66 @@ mutable struct SvmKKTSystem{T} <: AbstractKKTSystem{T}
     # kktsolver::AbstractKKTSolver{T}
 
     #solution vector for reduced KKT system 
+    # Memory pre-allocation, so don't need to allocate memory at each iteration when solving the linear system
     w::Vector{T}
     b::T
+    λ1::Vector{T}
+    λ2::Vector{T}
+    q::Vector{T}
+    ξ::Vector{T}
+
+    rλ2::T
+    rλ1::Vector{T}
+    rξ::Vector{T}
+    rw::Vector{T}
+    const1::Vector{T}
+    const2::Vector{T}
+
+    # Store the x, y, Y, which will be used to solve linear system
+    x::AbstractMatrix{T}  # Data features x
+    y::Vector{T}  # Data labels y
+    Y::AbstractMatrix{T} 
+
+
 
     function SvmKKTSystem{T}(
         data::SvmProblemData{T},
         cones::CompositeCone{T},
         settings::Settings{T}
-    ) where {T}
-
+        ) where {T}
+        
         #basic problem dimensions
         n = data.n
-
+        N = data.N
         #create the linear solver.  Always LDL for now
-        """That's the point of create the solver if kktsystem.jl already have the method to solve the system"""
-        # kktsolver = DirectLDLKKTSolver{T}(data.P,data.A,cones,m,n,settings)   
-
-        #the LHS of the reduced solve
+        """No need if kktsystem.jl already have the method to solve the system
+        kktsolver = DirectLDLKKTSolver{T}(data.P,data.A,cones,m,n,settings)
+        """   
+        
+        # Memory pre-allocation, so don't need to allocate memory at each iteration when solving the linear system
         w   = Vector{T}(undef,n)
         b   = T(1)
-
-
-        return new(w,b)
-
+        λ1  = Vector{T}(undef,N)
+        λ2  = Vector{T}(undef,N)
+        q   = Vector{T}(undef,N)
+        ξ   = Vector{T}(undef,N)
+        
+        rλ2 = T(1)
+        rλ1 = Vector{T}(undef,N)
+        rξ  = Vector{T}(undef,N)
+        rw  = Vector{T}(undef,n)
+        const1 = Vector{T}(undef,N)
+        const2 = Vector{T}(undef,N)
+        
+        # construct y and x, Y
+        x = deepcopy(data.x) # feature matrix
+        y = deepcopy(data.y) # s is label vector
+        Y = deepcopy(data.Y) # pairwise y = s * x
+        
+        return new(w,b,λ1,λ2,q,ξ,rλ2,rλ1,rξ,rw,const1,const2,x,y,Y)
+        
     end
-
+        
 end
 
 SvmKKTSystem(args...) = SvmKKTSystem{DefaultFloat}(args...)

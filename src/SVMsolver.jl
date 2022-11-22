@@ -84,7 +84,7 @@ function svm_setup!(
     return s
 end
 
-
+"""No need to check dimension for SVM problem"""
 #=
 # sanity check problem dimensions passed by user
 """Sanity check not need for SvmProblem"""
@@ -131,7 +131,7 @@ function solve!(
     α = zero(T)
     μ = typemax(T)
 
-#=     # solver release info, solver config
+    # solver release info, solver config
     # problem dimensions, cone type etc
     @notimeit begin
         print_banner(s.settings.verbose)
@@ -140,7 +140,7 @@ function solve!(
     end
 
     info_reset!(s.info,s.timers)
-=#
+
 
     @timeit s.timers "solve!" begin
 
@@ -169,7 +169,7 @@ function solve!(
             # record scalar values from most recent iteration.
             # This captures μ at iteration zero. 
 
-#=            info_save_scalars(s.info, μ, α, σ, iter)
+            info_save_scalars(s.info, μ, α, σ, iter)
 
             #convergence check and printing
             #--------------
@@ -188,11 +188,16 @@ function solve!(
                 elseif action === Update; continue; 
                 end
             end # allows continuation if new strategy provided
-=#
+
 
             #increment counter here because we only count
             #iterations that produce a KKT update 
+            
             iter += 1
+            # println("ITER = ", iter)
+            if(iter > 20)
+                break
+            end 
 
             """No scaling for SVM problem
             #update the scalings
@@ -211,8 +216,7 @@ function solve!(
 
             #calculate the affine step
             #--------------
-            """Not sure how each term in the rhs of the system is mapped into the a variable object, 
-            it's not used by the kkt_solver currently"""
+            
             variables_affine_step_rhs!(
                 s.step_rhs, s.residuals,
                 s.variables
@@ -291,13 +295,13 @@ function solve!(
     # to recapture the scalars and print one last line 
     if(α == zero(T))
         info_save_scalars(s.info, μ, α, σ, iter)
-        #@notimeit info_print_status(s.info,s.settings)
+        @notimeit info_print_status(s.info,s.settings)
     end 
 
     info_finalize!(s.info,s.residuals,s.settings,s.timers)  #halts timers
     solution_finalize!(s.solution,s.data,s.variables,s.info,s.settings)
 
-    #@notimeit info_print_footer(s.info,s.settings)
+    @notimeit info_print_footer(s.info,s.settings)
 
     return s.solution
 end
