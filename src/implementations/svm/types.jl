@@ -181,6 +181,11 @@ mutable struct SvmKKTSystem{T} <: AbstractKKTSystem{T}
     y::Vector{T}  # Data labels y
     Y::AbstractMatrix{T} 
 
+    Rhs::Vector{T}
+    reuse::Vector{T}
+    Linear_system_coef::AbstractMatrix{T}
+    D::Diagonal{T}
+    I1
 
 
     function SvmKKTSystem{T}(
@@ -216,8 +221,13 @@ mutable struct SvmKKTSystem{T} <: AbstractKKTSystem{T}
         x = deepcopy(data.x) # feature matrix
         y = deepcopy(data.y) # s is label vector
         Y = deepcopy(data.Y) # pairwise y = s * x
-        
-        return new(w,b,λ1,λ2,q,ξ,rλ2,rλ1,rξ,rw,const1,const2,x,y,Y)
+
+        Rhs = Vector{T}(undef,n+1)
+        reuse = Vector{T}(undef,N)
+        Linear_system_coef = Array{T}(undef,n+1,n+1)
+        D = Diagonal{T}(undef, N)
+        I1 = Matrix(1.0I, n, n)
+        return new(w,b,λ1,λ2,q,ξ,rλ2,rλ1,rξ,rw,const1,const2,x,y,Y,Rhs,reuse,Linear_system_coef,D,I1)
         
     end
         
