@@ -9,13 +9,12 @@ function info_update!(
 
     # Update the values for attributes of the SvmInfo
     # μ, step_length, sigma, iterations are updated in info_save_scalars
-    info.cost_primal = 0.5*norm(variables.w)^2 + data.C*norm(variables.ξ)
-    info.cost_dual = -0.5*norm(transpose(data.Y)*GetVector(variables.λ2))^2 + norm(GetVector(variables.λ2))
+    info.cost_primal = 0.5*norm(variables.w)^2 + data.C*norm(variables.ξ,1)
+    # info.cost_dual = -0.5*norm(transpose(data.Y)*GetVector(variables.λ2))^2 + norm(GetVector(variables.λ2),1)
+    info.cost_dual = -0.5*transpose(GetVector(variables.λ2))*data.Y*transpose(data.Y)*GetVector(variables.λ2)+norm(GetVector(variables.λ2),1)
     # Using infinite norm to compute primal residual and dual residual
-    # info.res_primal = norm(residuals.rw,Inf)
-    # info.res_dual = max(norm(residuals.rξ,Inf),norm(residuals.rλ1,Inf),norm(residuals.rλ2,Inf))
-    info.res_primal = norm(residuals.rw)
-    info.res_dual = max(norm(residuals.rξ),norm(residuals.rλ1),norm(residuals.rλ2))
+    info.res_primal = norm(residuals.rw,Inf)
+    info.res_dual = max(norm(residuals.rξ,Inf),norm(residuals.rλ1,Inf),norm(residuals.rλ2,Inf))
 
     #absolute and relative gaps
     info.gap_abs    = abs(info.cost_primal - info.cost_dual)
@@ -245,14 +244,19 @@ function _check_convergence(
     dinf_status::SolverStatus,
 ) where {T}
 
-    if info.ktratio < tol_ktratio && _is_solved(info, tol_gap_abs, tol_gap_rel, tol_feas)
+    # if info.ktratio < tol_ktratio && _is_solved(info, tol_gap_abs, tol_gap_rel, tol_feas)
+    #     info.status = solved_status
+        
+    if _is_solved(info, tol_gap_abs, tol_gap_rel, tol_feas)
         info.status = solved_status
-    elseif info.ktratio > 1/tol_ktratio
-        if _is_primal_infeasible(info, residuals, tol_infeas_abs, tol_infeas_rel)
-            info.status = pinf_status
-        elseif _is_dual_infeasible(info, residuals, tol_infeas_abs, tol_infeas_rel)
-            info.status = dinf_status
-        end
+
+    """SVM problem don't need infeasibility check, it's always feasible"""
+    # elseif info.ktratio > 1/tol_ktratio
+    #     if _is_primal_infeasible(info, residuals, tol_infeas_abs, tol_infeas_rel)
+    #         info.status = pinf_status
+    #     elseif _is_dual_infeasible(info, residuals, tol_infeas_abs, tol_infeas_rel)
+    #         info.status = dinf_status
+    #     end
     end
 end
 

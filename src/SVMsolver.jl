@@ -302,7 +302,10 @@ function solve!(
     solution_finalize!(s.solution,s.data,s.variables,s.info,s.settings)
 
     @notimeit info_print_footer(s.info,s.settings)
-
+    println("info.gap_abs = \n", s.info.gap_abs)
+    println("info.gap_rel = \n", s.info.gap_rel)
+    println("info.res_primal = \n", s.info.res_primal)
+    println("info.res_dual = \n", s.info.res_dual)
     return s.solution
 end
 
