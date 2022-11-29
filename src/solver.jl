@@ -75,10 +75,10 @@ end
 # main setup function
 function setup!(
     s::Solver{T},
-    P::AbstractMatrix{T},
-    q::Vector{T},
-    A::AbstractMatrix{T},
-    b::Vector{T},
+    P::AbstractMatrix,
+    q::Vector,
+    A::AbstractMatrix,
+    b::Vector,
     cones::Vector{<:SupportedCone},
 ) where{T}
 
@@ -169,11 +169,11 @@ function solve!(
 
     # solver release info, solver config
     # problem dimensions, cone type etc
-    # @notimeit begin
-    #     print_banner(s.settings.verbose)
-    #     info_print_configuration(s.info,s.settings,s.data,s.cones)
-    #     info_print_status_header(s.info,s.settings)
-    # end
+    @notimeit begin
+        print_banner(s.settings.verbose)
+        info_print_configuration(s.info,s.settings,s.data,s.cones)
+        info_print_status_header(s.info,s.settings)
+    end
 
     #info_reset!(s.info,s.timers)
 
@@ -203,25 +203,25 @@ function solve!(
 
             # record scalar values from most recent iteration.
             # This captures μ at iteration zero.  
-           # info_save_scalars(s.info, μ, α, σ, iter)
+            info_save_scalars(s.info, μ, α, σ, iter)
 
             #convergence check and printing
             #--------------
 
-            # info_update!(
-            #     s.info,s.data,s.variables,
-            #     s.residuals,s.settings,s.timers
-            # )
-            # @notimeit info_print_status(s.info,s.settings)
-            # isdone = info_check_termination!(s.info,s.residuals,s.settings,iter)
+            info_update!(
+                s.info,s.data,s.variables,
+                s.residuals,s.settings,s.timers
+            )
+            @notimeit info_print_status(s.info,s.settings)
+            isdone = info_check_termination!(s.info,s.residuals,s.settings,iter)
 
             # # check for termination due to slow progress and update strategy
-            # if isdone
-            #     (action,scaling) = _strategy_checkpoint_insufficient_progress(s,scaling) 
-            #     if     action ∈ [NoUpdate,Fail]; break;
-            #     elseif action === Update; continue; 
-            #     end
-            # end # allows continuation if new strategy provided
+            if isdone
+                (action,scaling) = _strategy_checkpoint_insufficient_progress(s,scaling) 
+                if     action ∈ [NoUpdate,Fail]; break;
+                elseif action === Update; continue; 
+                end
+            end # allows continuation if new strategy provided
 
             #increment counter here because we only count
             #iterations that produce a KKT update 
