@@ -30,7 +30,7 @@ P_Interest = Y * transpose(Y)
 q_Interest = -ones(6)
 P = sparse(zeros(12,12))
 P[7:12,7:12] = P_Interest
-q = zeros(12,1)
+q = zeros(12)
 q[7:12] = q_Interest * 1.0      #To set up, have to use float number
 # Construct A and b
 # The first 6 rows of A correspond to λ1 + λ2 = C 
@@ -57,7 +57,7 @@ A = sparse([1. 0. 0 0 0 0 1. 0 0 0 0 0;
      0 0 0 0 0 0 0 0 0 0 -1 0;
      0 0 0 0 0 0 0 0 0 0 0 -1])
 A[7, 7:12] = deepcopy(transpose(y))
-b = zeros(19,1)
+b = zeros(19)
 b[1:6] .= C * 1.0
 cones =[Clarabel.ZeroConeT(7),           #<--- for the equality constraint
         Clarabel.NonnegativeConeT(12)]
