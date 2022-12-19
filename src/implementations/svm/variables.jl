@@ -25,7 +25,7 @@ function variables_calc_step_length(
     (αξ,αq) = step_length(cones, step.ξ, step.q, variables.ξ, variables.q, settings, α)
     α = min(αξ, αq)
     (αλ1,αλ2) = step_length(cones, step.λ1, step.λ2, variables.λ1, variables.λ2, settings, α)
-    α = min(αλ1, αλ2)
+    α = min(αλ1, αλ2, α)
 
 
     if(steptype == :combined)
@@ -96,8 +96,8 @@ function variables_affine_step_rhs!(
     @. d.ξ     =  r.rξ
     @. d.λ1    =  r.rλ1
     d.b        =  r.rλ2
-    d.λ2      .=  diagm(variables.λ2) * variables.q
-    d.q       .=  diagm(variables.λ1) * variables.ξ
+    d.λ2      .=  Diagonal(variables.λ2) * variables.q
+    d.q       .=  Diagonal(variables.λ1) * variables.ξ
     
 
 
@@ -119,8 +119,8 @@ function variables_combined_step_rhs!(
     @. d.ξ  = (one(T) - dotσμ)*r.rξ
     @. d.λ1 = (one(T) - dotσμ)*r.rλ1
     d.b     = (one(T) - dotσμ)*r.rλ2
-    d.λ2   .= diagm(variables.λ2) * variables.q + diagm(step.q)*step.λ2 .+ one(T)*dotσμ
-    d.q    .= diagm(variables.λ1) * variables.ξ + diagm(step.λ1)*step.ξ .+ one(T)*dotσμ
+    d.λ2   .= variables.λ2 .* variables.q + step.q .*step.λ2 .+ dotσμ
+    d.q    .= variables.λ1 .* variables.ξ + step.λ1 .*step.ξ .+ dotσμ
 
 end
 

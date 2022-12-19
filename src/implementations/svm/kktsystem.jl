@@ -92,7 +92,7 @@ function kkt_solve!(
     # Brhs = -kktsystem.rλ2 .- transpose(kktsystem.y)*D*kktsystem.reuse
     # kktsystem.Rhs = vcat(Trhs, Brhs) # dimension = n + 1
     kktsystem.Rhs[1:n] = -kktsystem.rw + transpose(kktsystem.Y)*D*kktsystem.reuse
-    kktsystem.Rhs[end] = -kktsystem.rλ2 .- transpose(kktsystem.y)*D*kktsystem.reuse
+    kktsystem.Rhs[end] = -kktsystem.rλ2 - transpose(kktsystem.y)*D*kktsystem.reuse
 
     Factor = lu(kktsystem.Linear_system_coef)
     result = Factor \ kktsystem.Rhs
@@ -115,14 +115,19 @@ function kkt_solve!(
     # lhs.w = Δw; lhs.b = Δb
     lhs.w .= result[1:end-1]
     lhs.b = result[end]
-
+    constructVector = ones(N, 1)
     # Solve for Δλ2, Δξ, Δq, Δλ1 given Δw, Δb with pre-allocated memory
     # lhs.λ1 = Δλ1; lhs.λ2 = Δλ2; lhs.q = Δq; lhs.ξ = Δξ
-    lhs.λ2 .= D * (-kktsystem.rξ -kktsystem.Y*lhs.w + kktsystem.ξ + inv(Dλ1)*Dξ*kktsystem.rλ1 - kktsystem.q + kktsystem.y.*lhs.b)
+    lhs.λ2 .= D * (-kktsystem.rξ -kktsystem.Y*lhs.w + inv(Dλ1)*kktsystem.const2 + inv(Dλ1)*Dξ*kktsystem.rλ1 - inv(Dλ2)*kktsystem.const1 + kktsystem.y*lhs.b)
     lhs.λ1 .= kktsystem.rλ1 - lhs.λ2
-    lhs.q .= -kktsystem.q - inv(Dλ2)*Dq*lhs.λ2
-    lhs.ξ .= -kktsystem.ξ - inv(Dλ1)*Dξ*lhs.λ1
-    
+
+    #lhs.q .= -inv(Dλ2) * Dq * Dλ2 * constructVector - inv(Dλ2)*Dq*lhs.λ2
+    #lhs.ξ .= -inv(Dλ1) * Dλ1 * Dξ * constructVector - inv(Dλ1)*Dξ*lhs.λ1
+    lhs.q .= -inv(Dλ2) * kktsystem.const1 - inv(Dλ2)*Dq*lhs.λ2
+    lhs.ξ .= -inv(Dλ1) * kktsystem.const2 - inv(Dλ1)*Dξ*lhs.λ1
+
+    # print("const1: ")
+    # println(Dq * Dλ2 * constructVector)
     # # Update the step size
     # @. lhs.λ1 = Δλ1
     # @. lhs.λ2 = Δλ2

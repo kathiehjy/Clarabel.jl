@@ -221,6 +221,18 @@ function solve!(
                 s.step_rhs, s.residuals,
                 s.variables
             )
+            # for test
+            # println(s.variables.λ1)
+            # println(s.variables.λ2)
+            # println(s.variables.q)
+            # println(s.variables.ξ)
+
+            # println(s.residuals.rλ1)
+            # println(s.residuals.rλ2)
+            # println(s.residuals.rw)
+            # println(s.residuals.rξ)
+            # println(s.step_rhs.λ2)
+
 
 
             """kkt_solver.jl directly solve the reduced system,
@@ -232,6 +244,15 @@ function solve!(
                     s.data, s.variables, :affine
                 )  # Solve for and Update s.step_lhs, which is the affine step size
             end
+
+            # println(s.step_lhs.λ1)
+            # println(s.step_lhs.λ2)
+            # println(s.step_lhs.w)
+            # println(s.step_lhs.ξ)
+            # println(s.step_lhs.q)
+            # println(s.step_lhs.b)
+
+
 
             # combined step only on affine step success 
             if is_kkt_solve_success
@@ -324,6 +345,37 @@ function solver_default_start!(s::Solver{T}) where {T}
         kkt_solve_initial_point!(s.variables)
         #fix up (z,s) so that they are in the cone
         variables_symmetric_initialization!(s.variables, s.cones)
+
+
+        ## Initialized at the correct termination value
+        # s.variables.w = [0.6666666666960108;
+        #                  0.6666666666467098]
+        # s.variables.b = 2.999999999948629
+        # SetVector(s.variables.q, [-4.809708187281103e-12;
+        #                           0.6666666666675825;
+        #                           0.33333333329447146;
+        #                           9.846812254465931e-11;
+        #                           3.537259374297719e-11;
+        #                           1.9999999999368754])
+        # SetVector(s.variables.ξ, [3.5991655976803164e-11;
+        #                           1.2373050806940264e-11;
+        #                           1.1917822752684126e-11;
+        #                           1.893487514317743e-11;
+        #                           5.140746579783298e-12;
+        #                           1.5815130244666894e-11])   
+        # SetVector(s.variables.λ1, [0.5555555555859659;
+        #                            0.9999999999809523;
+        #                            0.9999999999901622;
+        #                            0.7777777777668619;
+        #                            0.77777777779724;
+        #                            0.9999999999929797])  
+        # SetVector(s.variables.λ2, [0.4444444444119582;
+        #                            1.6973601797766883e-11;
+        #                            7.763780125690267e-12;
+        #                            0.22222222223106397;
+        #                            0.22222222220068538;
+        #                            4.9462529487953705e-12])                                               
+
 
     else
         #Assigns unit (z,s) and zeros the primal variables 

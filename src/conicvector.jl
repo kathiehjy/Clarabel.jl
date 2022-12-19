@@ -54,6 +54,11 @@ function GetVector(s::ConicVector{T}) where{T}
     return s.vec
 end
 
+function SetVector(s::ConicVector{T}, x) where{T}
+    s.vec = x
+end
+
+
 Base.adjoint(s::ConicVector{T}) where{T} = adjoint(s.vec)
 Base.iterate(s::ConicVector{T}) where{T} = iterate(s.vec)
 Base.eltype(s::ConicVector{T}) where{T} = eltype(s.vec)

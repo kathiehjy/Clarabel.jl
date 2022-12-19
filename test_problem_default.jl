@@ -10,6 +10,7 @@ for i in range(1,length(y))
     Y[i,:] = x[i,:] .* y[i]
 end
 settings = Clarabel.Settings()
+settings.equilibrate_enable = false
 
 solver   = Clarabel.Solver()
 
@@ -20,8 +21,10 @@ result = Clarabel.solve!(solver)
 # In the interface and the default problem correspond to hyperplane wᵀx + b = 0
 # So Yw + yb - 1 + ξ - q = 0
 # The OOQP paper and the linear system of the customized SVM solver correspond to hyperplane wᵀx - b = 0
-q = Y * result.x[1:2] + y * result.x[3] + result.x[4:end] .- 1 
-
+q_kkt = Y * result.x[1:2] + y * result.x[3] + result.x[4:end] .- 1 
+w_kkt = result.x[1:2]
+b_kkt = result.x[3]
+ξ_kkt = result.x[4:end]
 
 # Test for dual problem with variable = [λ1 λ2] 
 
@@ -54,8 +57,8 @@ A = sparse([1. 0. 0 0 0 0 1. 0 0 0 0 0;
     0 0 0 0 0 0 0 -1 0 0 0 0;
     0 0 0 0 0 0 0 0 -1 0 0 0;
     0 0 0 0 0 0 0 0 0 -1 0 0;
-     0 0 0 0 0 0 0 0 0 0 -1 0;
-     0 0 0 0 0 0 0 0 0 0 0 -1])
+    0 0 0 0 0 0 0 0 0 0 -1 0;
+    0 0 0 0 0 0 0 0 0 0 0 -1])
 A[7, 7:12] = deepcopy(transpose(y))
 b = zeros(19)
 b[1:6] .= C * 1.0
@@ -67,3 +70,6 @@ settings = Clarabel.Settings()
 solver   = Clarabel.Solver()
 Clarabel.setup!(solver, P, q, A, b, cones, settings)
 result = Clarabel.solve!(solver)
+λ1_kkt = result.x[1:6]
+λ2_kkt = result.x[7:12]
+
