@@ -334,7 +334,8 @@ function solver_default_start!(s::Solver{T}) where {T}
     # If there are only symmetric cones, use CVXOPT style initilization
     # Otherwise, initialize along central rays
 
-    if (is_symmetric(s.cones))
+    if (false && is_symmetric(s.cones))
+        println("Symmetric init")
         #set all scalings to identity (or zero for the zero cone)
         set_identity_scaling!(s.cones)
         #Refactor
@@ -346,6 +347,7 @@ function solver_default_start!(s::Solver{T}) where {T}
 
     else
         #Assigns unit (z,s) and zeros the primal variables 
+        println("Unit init")
         variables_unit_initialization!(s.variables, s.cones)
     end
 

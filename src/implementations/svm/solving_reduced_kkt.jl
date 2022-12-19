@@ -66,34 +66,34 @@ end
 
 
 #Example
-rλ1 = [2.0; 2; 3; 5; 3.0] * 0.05
-rλ2 = 5.0
-rξ = [1.0; 3; 8; 3; 5.0] * 0.03
-rw = [3.0; 2] * 0.02
-λ1 = [1.0; 5; 3; 4; 5.0] 
-λ2 = [5.0; 1; 4; 4; 5.0] 
-q = [1.0; 2; 9; 4; 5.0] 
-ξ = [1.0; 2; 3; 4; 5.0] 
-DataP = [1 2 1; 0 2 1; 1 1.5 1; 3 3 -1; 2 4 -1]
+# rλ1 = [2.0; 2; 3; 5; 3.0] * 0.05
+# rλ2 = 5.0
+# rξ = [1.0; 3; 8; 3; 5.0] * 0.03
+# rw = [3.0; 2] * 0.02
+# λ1 = [1.0; 5; 3; 4; 5.0] 
+# λ2 = [5.0; 1; 4; 4; 5.0] 
+# q = [1.0; 2; 9; 4; 5.0] 
+# ξ = [1.0; 2; 3; 4; 5.0] 
+# DataP = [1 2 1; 0 2 1; 1 1.5 1; 3 3 -1; 2 4 -1]
 
-(Δw, Δb, Δλ1, Δλ2, Δξ, Δq, y, s) = solving_reduced_kkt(DataP,rλ2,rλ1,rξ,rw,λ1,λ2,q,ξ)
+# (Δw, Δb, Δλ1, Δλ2, Δξ, Δq, y, s) = solving_reduced_kkt(DataP,rλ2,rλ1,rξ,rw,λ1,λ2,q,ξ)
 
-rwt = Δw - transpose(y) * Δλ2        
-rξt = y*Δw + Δξ - Δq - s*Δb
-rλ1t = -Δλ2 - Δλ1                    
-rλ2t = transpose(s) * Δλ2            
-Dξ = Diagonal(ξ)
-Dλ1 = Diagonal(λ1)
-Dλ2 = Diagonal(λ2)
-Dq = Diagonal(q)
+# rwt = Δw - transpose(y) * Δλ2        
+# rξt = y*Δw + Δξ - Δq - s*Δb
+# rλ1t = -Δλ2 - Δλ1                    
+# rλ2t = transpose(s) * Δλ2            
+# Dξ = Diagonal(ξ)
+# Dλ1 = Diagonal(λ1)
+# Dλ2 = Diagonal(λ2)
+# Dq = Diagonal(q)
 
 
-display(rλ1t)
-display(rλ2t)
-display(rξt)
-display(rwt)
-display(Dq*Δλ2 + Dλ2*Δq + Dq*λ2)
-display(Dλ1*Δξ + Dξ*Δλ1 + Dλ1*ξ)
+# display(rλ1t)
+# display(rλ2t)
+# display(rξt)
+# display(rwt)
+# display(Dq*Δλ2 + Dλ2*Δq + Dq*λ2)
+# display(Dλ1*Δξ + Dξ*Δλ1 + Dλ1*ξ)
 
 # Solve the original system
 function full_linear(   D,   # Each row is [feature vector | label]
@@ -165,15 +165,18 @@ function full_linear(   D,   # Each row is [feature vector | label]
     Δb = result[end]
     return Δw, Δb, Δλ1, Δλ2, Δξ, Δq
 end
-(Δwt, Δbt, Δλ1t, Δλ2t, Δξt, Δqt) = full_linear(DataP,rλ2,rλ1,rξ,rw,λ1,λ2,q,ξ)
-rwt = Δwt - transpose(y) * Δλ2t        
-rξt = y*Δwt + Δξt - Δqt - s*Δbt
-rλ1t = -Δλ2t - Δλ1t                    
-rλ2t = transpose(s) * Δλ2t            
-Dξ = Diagonal(ξ)
-Dλ1 = Diagonal(λ1)
-Dλ2 = Diagonal(λ2)
-Dq = Diagonal(q)
+
+
+# For test
+# (Δwt, Δbt, Δλ1t, Δλ2t, Δξt, Δqt) = full_linear(DataP,rλ2,rλ1,rξ,rw,λ1,λ2,q,ξ)
+# rwt = Δwt - transpose(y) * Δλ2t        
+# rξt = y*Δwt + Δξt - Δqt - s*Δbt
+# rλ1t = -Δλ2t - Δλ1t                    
+# rλ2t = transpose(s) * Δλ2t            
+# Dξ = Diagonal(ξ)
+# Dλ1 = Diagonal(λ1)
+# Dλ2 = Diagonal(λ2)
+# Dq = Diagonal(q)
 
 
 #display(rλ1t)
@@ -184,9 +187,9 @@ Dq = Diagonal(q)
 #display(Dq*Δλ2t + Dλ2*Δqt + Dq*λ2)
 #display(Dλ1*Δξt + Dξ*Δλ1t + Dλ1*ξ)
 
-display(Δwt - Δw)
-display(Δbt - Δb)
-display(Δλ1t - Δλ1)
-display(Δλ2t - Δλ2)
-display(Δξt - Δξ)
-display(Δqt - Δq)
+# display(Δwt - Δw)
+# display(Δbt - Δb)
+# display(Δλ1t - Δλ1)
+# display(Δλ2t - Δλ2)
+# display(Δξt - Δξ)
+# display(Δqt - Δq)

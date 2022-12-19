@@ -9,7 +9,7 @@ function SVMinterface(D, C)
     dim = n + l +1      # <-- A frequently appeared quantity
 
     # Construct P
-    P1 = sparse(2.0I, n, n)
+    P1 = sparse(1.0I, n, n)
     P2 = spzeros(n, dim - n)
     P3 = spzeros(dim - n, dim - n)
     P = [P1 P2; transpose(P2) P3]  # Construct correctly -- tested
@@ -47,9 +47,6 @@ function SVMinterface(D, C)
     # Returns a tuple that contains all the data input required for clarabel solver
 end 
 
-DataP = [1 2 1; 0 2 1; 1 1.5 1; 3 3 -1; 2 4 -1; 1 8 -1]
-C = 100
-(P, q, A, b, cones) = SVMinterface(DataP, C)
-print(A)
+
 
 
