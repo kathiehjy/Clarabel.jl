@@ -115,7 +115,7 @@ function kkt_solve!(
     # lhs.w = Δw; lhs.b = Δb
     lhs.w .= result[1:end-1]
     lhs.b = result[end]
-    constructVector = ones(N, 1)
+
     # Solve for Δλ2, Δξ, Δq, Δλ1 given Δw, Δb with pre-allocated memory
     # lhs.λ1 = Δλ1; lhs.λ2 = Δλ2; lhs.q = Δq; lhs.ξ = Δξ
     lhs.λ2 .= D * (-kktsystem.rξ -kktsystem.Y*lhs.w + inv(Dλ1)*kktsystem.const2 + inv(Dλ1)*Dξ*kktsystem.rλ1 - inv(Dλ2)*kktsystem.const1 + kktsystem.y*lhs.b)

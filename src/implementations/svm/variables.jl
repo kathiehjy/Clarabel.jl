@@ -96,8 +96,8 @@ function variables_affine_step_rhs!(
     @. d.ξ     =  r.rξ
     @. d.λ1    =  r.rλ1
     d.b        =  r.rλ2
-    d.λ2      .=  Diagonal(variables.λ2) * variables.q
-    d.q       .=  Diagonal(variables.λ1) * variables.ξ
+    d.λ2      .=  variables.λ2 .* variables.q
+    d.q       .=  variables.λ1 .* variables.ξ
     
 
 
