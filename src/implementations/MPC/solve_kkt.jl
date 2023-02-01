@@ -269,3 +269,82 @@ println(Δλ1-Δλ)
 println(Δv1-Δv)
 println(Δq1-Δq)
 println(Δx_end1-Δx_end)
+
+
+
+# Solve for symmetric KKT system
+function solve_symmetric_kkt_with_initial(
+    N,
+    x0,  # x0 is a known initial condition   
+    r1,
+    r2,
+    r3,
+    r4,
+    r_end,
+    Q,
+    R,
+    Q̅,
+    A,
+    B, 
+    D,
+    G,
+    λ,
+    q,           # all the listed residual and varible are known
+)               # only need to solve the reduced system
+    (h, n) = size(G)
+    m = size(R, 1)
+    dim = 2 * n + h + m
+    total_d = N * (dim) + n
+
+
+    coefficient = zeros(total_d, total_d)
+    RHS = Vector(undef, total_d)
+    for i in 0:N-1
+        T = Diagonal(inv.(λ[:,i+1]))*Diagonal(q[:,i+1])
+        # Construct the coefficient matrix for the MPC problem
+        coefficient[i*dim+1:i*dim+n,i*dim+1:i*dim+n]                     .= Q
+        coefficient[i*dim+1:i*dim+n,i*dim+1+n+m:i*dim+n+m+h]             .= -transpose(G)
+        coefficient[i*dim+1:i*dim+n,i*dim+1+n+m+h:i*dim+2*n+m+h]         .= transpose(A)
+        coefficient[i*dim+1+n:i*dim+n+m,i*dim+1+n:i*dim+n+m]             .= R
+        coefficient[i*dim+1+n:i*dim+n+m,i*dim+1+n+m:i*dim+n+m+h]         .= transpose(D)
+        coefficient[i*dim+1+n:i*dim+n+m,i*dim+1+n+m+h:i*dim+2*n+m+h]     .= transpose(B)
+        coefficient[i*dim+1+n+m:i*dim+n+m+h,i*dim+1:i*dim+n]             .= -G
+        coefficient[i*dim+1+n+m:i*dim+n+m+h,i*dim+1+n:i*dim+n+m]         .= D
+        coefficient[i*dim+1+n+m:i*dim+n+m+h,i*dim+1+n+m:i*dim+n+m+h]     .= -T
+        coefficient[i*dim+1+n+m+h:i*dim+2*n+m+h,i*dim+1:i*dim+n]         .= A
+        coefficient[i*dim+1+n+m+h:i*dim+2*n+m+h,i*dim+1+n:i*dim+n+m]     .= B
+        coefficient[i*dim+1+n+m+h:i*dim+2*n+m+h,i*dim+dim+1:i*dim+dim+n] .= -I(n)
+        coefficient[(i+1)*dim+1:(i+1)*dim+n,i*dim+1+n+m+h:i*dim+2*n+m+h] .= -I(n) 
+
+        # Construct the RHS of the KKTSystem
+        RHS[i*dim+1:i*dim+n]             .= r1[:,i+1]
+        RHS[i*dim+n+1:i*dim+n+m]         .= r2[:,i+1]
+        RHS[i*dim+n+m+1:i*dim+n+m+h]     .= r3[:,i+1] - T * λ[:,i+1]
+        RHS[i*dim+n+m+h+1:i*dim+2*n+m+h] .= r4[:,i+1]
+    end
+    #for i in 1:N-1
+    #    coefficient[i*dim+1:i*dim+n, (i-1)*dim+1+n+m+h:(i-1)*dim+2*n+m+h].= -I(n) 
+    #end
+    #coefficient[total_d-n+1:end,total_d-h-2*n+1:total_d-h-n] .= -I(n)
+    coefficient[total_d-n+1:end,total_d-n+1:end]             .= Q̅
+    RHS[total_d-n+1:end] = r_end
+
+    result = -inv(coefficient) * RHS
+
+    Δx = Matrix(undef,n,N)
+    Δu = Matrix(undef,m,N)
+    Δv = Matrix(undef,n,N)
+    Δλ = Matrix(undef,h,N)
+    Δq = Matrix(undef,h,N)
+    for i in 0:N-1
+        Δx[:,i+1] = result[i*dim+1:i*dim+n]
+        Δu[:,i+1] = result[i*dim+1+n:i*dim+n+m]
+        Δλ[:,i+1] = result[i*dim+1+n+m:i*dim+n+m+h] 
+        Δv[:,i+1] = result[i*dim+1+n+m+h:(i+1)*dim] 
+    end
+    Ttotal = Diagonal(inv.(λ)).*Diagonal(q)
+    Δq = -Ttotal*(Δλ + λ)
+    Δx_end = result[total_d-n+1:end]
+
+    return Δx, Δu, Δλ, Δv, Δq, Δx_end
+end
