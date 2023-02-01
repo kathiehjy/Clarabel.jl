@@ -43,6 +43,10 @@ function solve_kkt(
         coefficient[i*dim+1+n+m+h:i*dim+2*n+m+h,i*dim+dim+1:i*dim+dim+n] .= -I(n)
 
     end
+    for i in 1:N-1
+        coefficient[i*dim+1:i*dim+n, (i-1)*dim+1+n+m+h:(i-1)*dim+2*n+m+h].= -I(n) 
+        
+    end
     coefficient[total_d-n+1:end,total_d-h-2*n+1:total_d-h-n] .= -I(n)
     coefficient[total_d-n+1:end,total_d-n+1:end]             .= Q̅
 
@@ -87,7 +91,7 @@ q = Matrix([1 1])
 Q = [2 1; 0 2]
 R = 0.5
 Q̅ = [1 3; 5 3]
-r1 = [0.5 0.1; 0.5 0.5]
+r1 = [0.5 0.1; 0.9 0.5]
 r2 = Matrix([1 1])
 r3 = Matrix([2 2])
 r4 = [0.1 0.5; 0.9 1]
@@ -103,14 +107,17 @@ x_one_step_ahead[:,end] = deepcopy(Δx_end)
 λ_m = reshape(Δλ, h, :)
 q_m = reshape(Δq, h, :)
 
-r1 = Q * Δx - transpose(G) * λ_m + transpose(A) * Δv 
+r1[:,1] = Q * Δx[:,1] - transpose(G) * λ_m[:,1] + transpose(A) * Δv[:,1]
+r1[:,2] = Q * Δx[:,2] - transpose(G) * λ_m[:,2] + transpose(A) * Δv[:,2] - Δv[:,1]
 r2 = R * Δu + transpose(D) * λ_m + transpose(B) * Δv 
 r3 =-G * Δx + D * Δu + q_m
 r4 = A * Δx + B * Δu - x_one_step_ahead
-r_end = Q̅ * Δx_end + Δv[:,end]
+rλ = λ .* Δq + q .* Δλ + λ .* q 
+r_end = Q̅ * Δx_end - Δv[:,end]
 
 println(r1)
 println(r2)
 println(r3)
 println(r4)
+println(rλ)
 println(r_end)
