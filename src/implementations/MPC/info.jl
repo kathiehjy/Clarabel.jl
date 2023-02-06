@@ -1,8 +1,8 @@
 function info_update!(
-    info::TemplateInfo{T},
-    data::TemplateProblemData{T},
-    variables::TemplateVariables{T},
-    residuals::TemplateResiduals{T},
+    info::MPCInfo{T},
+    data::MPCProblemData{T},
+    variables::MPCVariables{T},
+    residuals::MPCResiduals{T},
     settings::Settings{T},
     timers::TimerOutput
 ) where {T}
@@ -12,8 +12,8 @@ function info_update!(
 end
 
 function info_check_termination!(
-    info::TemplateInfo{T},
-    residuals::TemplateResiduals{T},
+    info::MPCInfo{T},
+    residuals::MPCResiduals{T},
     settings::Settings{T},
     iter::Int
 ) where {T}
@@ -68,9 +68,9 @@ end
 
 
 function info_save_prev_iterate(
-    info::TemplateInfo{T},
-    variables::TemplateVariables{T},
-    prev_variables::TemplateVariables{T}
+    info::MPCInfo{T},
+    variables::MPCVariables{T},
+    prev_variables::MPCVariables{T}
 ) where {T}
 
     info.prev_cost_primal = info.cost_primal
@@ -84,9 +84,9 @@ function info_save_prev_iterate(
 end
 
 function info_reset_to_prev_iterate(
-    info::TemplateInfo{T},
-    variables::TemplateVariables{T},
-    prev_variables::TemplateVariables{T}
+    info::MPCInfo{T},
+    variables::MPCVariables{T},
+    prev_variables::MPCVariables{T}
 ) where {T}
 
     info.cost_primal = info.prev_cost_primal
@@ -100,7 +100,7 @@ function info_reset_to_prev_iterate(
 end
 
 function info_save_scalars(
-    info::TemplateInfo{T},
+    info::MPCInfo{T},
     μ::T,
     α::T,
     σ::T,
@@ -117,7 +117,7 @@ end
 
 
 function info_reset!(
-    info::TemplateInfo{T},
+    info::MPCInfo{T},
     timers::TimerOutput
 ) where {T}
 
@@ -133,7 +133,7 @@ end
 
 
 function info_get_solve_time!(
-    info::TemplateInfo{T},
+    info::MPCInfo{T},
     timers::TimerOutput
 ) where {T}
     #TimerOutputs reports in nanoseconds
@@ -143,8 +143,8 @@ end
 
 
 function info_finalize!(
-    info::TemplateInfo{T},
-    residuals::TemplateResiduals{T},
+    info::MPCInfo{T},
+    residuals::MPCResiduals{T},
     settings::Settings{T},
     timers::TimerOutput
 ) where {T}
@@ -213,8 +213,8 @@ end
 
 
 function _check_convergence(
-    info::TemplateInfo{T},
-    residuals::TemplateResiduals{T},
+    info::MPCInfo{T},
+    residuals::MPCResiduals{T},
     tol_gap_abs::T,
     tol_gap_rel::T,
     tol_feas::T,

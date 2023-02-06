@@ -22,6 +22,7 @@ mutable struct MPCProblemData{T} <: AbstractProblemData{T}
     n::Integer              # dim of states
     m::Integer              # dim of inputs
     h::Integer
+    x0::Vector{T}
 
     function MPCProblemData{T}(
         Q::AbstractMatrix{T},
@@ -33,6 +34,7 @@ mutable struct MPCProblemData{T} <: AbstractProblemData{T}
         G::AbstractMatrix{T},
         d::Vector{T},
         N::Integer,
+        x0::Vector{T}            # x0 is a known initial condition
     ) where {T}   
         Q = deepcopy(Q)
         R = deepcopy(R)
@@ -45,8 +47,9 @@ mutable struct MPCProblemData{T} <: AbstractProblemData{T}
         N = N
         (h, n) = size(G)
         m = size(R, 1)
+        x0 = deepcopy(x0)
 
-        new(Q, R, Q̅, A, B, D, G, d, N, n, m, h)
+        new(Q, R, Q̅, A, B, D, G, d, N, n, m, h, x0)
     end
 
 

@@ -172,7 +172,7 @@ end
 
 function variables_finalize!(
     variables::MPCVariables{T},
-    equil::MPCEquilibration{T},
+    equil,
     status::SolverStatus
 ) where {T}
 

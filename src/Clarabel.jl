@@ -28,16 +28,28 @@ module Clarabel
     include("./kktsolvers/kktsolver_defaults.jl")
     include("./kktsolvers/kktsolver_directldl.jl")
 
+    """Choose between different implementations
+    <add other problem type implementations here>
+    """
     #default solver components implementation
+
     #include("./implementations/default/include.jl")
-    #<add other problem type implementations here>
-    include("./implementations/svm/include.jl")
+
+    #include("./implementations/svm/include.jl")
+
+    include("./implementations/MPC/include.jl")
 
     # printing and top level solver
+    """ Choose between different solver
+    """
     #include("./info_print.jl")
     #include("./solver.jl")
-    include("./SVMinfo_print.jl")
-    include("./SVMsolver.jl")
+
+    #include("./SVMinfo_print.jl")
+    #include("./SVMsolver.jl")
+
+    #include("./MPCinfo_print.jl")
+    include("./MPCsolver.jl")
 
     #conic constraints.  Additional
     #cone implementations go here

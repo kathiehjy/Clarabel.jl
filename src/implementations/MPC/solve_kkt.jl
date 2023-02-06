@@ -286,23 +286,23 @@ function solve_symmetric_kkt_with_initial(
     coefficient = zeros(total_d, total_d)
     RHS = Vector(undef, total_d)
 
-    T = Diagonal(inv.(λ[:,1]))*Diagonal(q[:,1])
+    K = Diagonal(inv.(λ[:,1]))*Diagonal(q[:,1])
     coefficient[1:m,1:m]             .= R
     coefficient[1:m,1+m:m+h]         .= transpose(D)
     coefficient[1:m,1+m+h:n+m+h]     .= transpose(B)
     coefficient[1+m:m+h,1:m]         .= D
-    coefficient[1+m:m+h,1+m:m+h]     .= -T
+    coefficient[1+m:m+h,1+m:m+h]     .= -K
     coefficient[1+m+h:n+m+h,1:m]     .= B
     coefficient[1+m+h:n+m+h,dim-n+1:dim] .= -I(n)
     coefficient[dim-n+1:dim,m+h+1:m+h+n] .= -I(n) 
 
   
     RHS[1:m]         .= r2[:,1]
-    RHS[m+1:m+h]     .= r3[:,1] - T * λ[:,1]
+    RHS[m+1:m+h]     .= r3[:,1] - K * λ[:,1]
     RHS[m+h+1:n+m+h] .= r4[:,1]
 
     for i in 1:N-1
-        T = Diagonal(inv.(λ[:,i+1]))*Diagonal(q[:,i+1])
+        K = Diagonal(inv.(λ[:,i+1]))*Diagonal(q[:,i+1])
         # Construct the coefficient matrix for the MPC problem
         coefficient[i*dim+1-n:i*dim,i*dim+1-n:i*dim]                 .= Q
         coefficient[i*dim+1-n:i*dim,i*dim+1+m:i*dim+m+h]             .= -transpose(G)
@@ -312,7 +312,7 @@ function solve_symmetric_kkt_with_initial(
         coefficient[i*dim+1:i*dim+m,i*dim+1+m+h:i*dim+n+m+h]         .= transpose(B)
         coefficient[i*dim+1+m:i*dim+m+h,i*dim+1-n:i*dim]             .= -G
         coefficient[i*dim+1+m:i*dim+m+h,i*dim+1:i*dim+m]             .= D
-        coefficient[i*dim+1+m:i*dim+m+h,i*dim+1+m:i*dim+m+h]         .= -T
+        coefficient[i*dim+1+m:i*dim+m+h,i*dim+1+m:i*dim+m+h]         .= -K
         coefficient[i*dim+1+m+h:i*dim+n+m+h,i*dim+1-n:i*dim]         .= A
         coefficient[i*dim+1+m+h:i*dim+n+m+h,i*dim+1:i*dim+m]         .= B
         coefficient[i*dim+1+m+h:i*dim+n+m+h,i*dim+1+m+h+n:i*dim+2*n+m+h] .= -I(n)
@@ -321,13 +321,10 @@ function solve_symmetric_kkt_with_initial(
         # Construct the RHS of the KKTSystem
         RHS[i*dim+1-n:i*dim]         .= r1[:,i+1]
         RHS[i*dim+1:i*dim+m]         .= r2[:,i+1]
-        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - T * λ[:,i+1]
+        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - K * λ[:,i+1]
         RHS[i*dim+m+h+1:i*dim+n+m+h] .= r4[:,i+1]
     end
-    #for i in 1:N-1
-    #    coefficient[i*dim+1:i*dim+n, (i-1)*dim+1+n+m+h:(i-1)*dim+2*n+m+h].= -I(n) 
-    #end
-    #coefficient[total_d-n+1:end,total_d-h-2*n+1:total_d-h-n] .= -I(n)
+
     coefficient[total_d-n+1:end,total_d-n+1:end]             .= Q̅
     RHS[total_d-n+1:end] = r_end
 
@@ -351,8 +348,8 @@ function solve_symmetric_kkt_with_initial(
         Δλ[:,i+1] = result[i*dim+1+m:i*dim+m+h] 
         Δv[:,i+1] = result[i*dim+1+m+h:i*dim+n+m+h] 
     end
-    Ttotal = Diagonal(inv.(λ)).*Diagonal(q)
-    Δq = -Ttotal*(Δλ + λ)
+    Ktotal = Diagonal(inv.(λ)).*Diagonal(q)
+    Δq = -Ktotal*(Δλ + λ)
     Δx_end = result[total_d-n+1:end]
 
     return Δx, Δu, Δλ, Δv, Δq, Δx_end

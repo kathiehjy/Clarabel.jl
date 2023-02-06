@@ -3,91 +3,129 @@
 # both object creation and setup
 #--------------------------------------
 function Solver(
-    D::AbstractMatrix{T},
-    C::T,
+    P::AbstractMatrix{T},
+    c::Vector{T},
+    A::AbstractMatrix{T},
+    b::Vector{T},
+    cones::Vector{<:SupportedCone},
     kwargs...
 ) where{T <: AbstractFloat}
 
     s = Solver{T}()
-    svm_setup!(s,D,C,kwargs...)
+    MPC_setup!(s,P,c,A,b,cones,kwargs...)
     return s
 end
 
 # -------------------------------------
-# setup!
+# MPC_setup!
 # -------------------------------------
 
 
 """
-	setup!(solver, D, C, [settings])
+	MPC_setup!(solver, Q, R, Q̅, A, B, D, G, d, N, x0, [settings])
 
-Populates a [`Solver`](@ref) with a Dataset defined by `D`, and a weight coefficient `C` to weight between the conflicting objective of maximise the margin and identify data correctly,
-cones will all be NonnegativeConeT for SvmProblem
+Populates a [`Solver`](@ref) with a cost function defined by `P` and `q`, and one or more conic constraints defined by `A`, `b` and a description of a conic constraint composed of cones whose types and dimensions are specified by `cones.`
 
-The solver will be configured to solve the  SVM problem
+The solver will be configured to solve the following optimization problem:
 
-All data matrices must be sparse.  
+```
+min   1/2 x'Px + q'x
+s.t.  Ax + s = b, s ∈ K
+```
+
+All data matrices must be sparse.   The matrix `P` is assumed to be symmetric and positive semidefinite, and only the upper triangular part is used.
+
+The cone `K` is a composite cone.   To define the cone the user should provide a vector of cone specifications along
+with the appropriate dimensional information.   For example, to generate a cone in the nonnegative orthant followed by
+a second order cone, use:
+
+```
+cones = [Clarabel.NonnegativeConeT(dim_1),
+         Clarabel.SecondOrderConeT(dim_2)]
+```
+
+If the argument 'cones' is constructed incrementally, the should should initialize it as an empty array of the supertype for all allowable cones, e.g.
+
+```
+cones = Clarabel.SupportedCone[]
+push!(cones,Clarabel.NonnegativeConeT(dim_1))
+...
+```
+
+The optional argument `settings` can be used to pass custom solver settings:
+```julia
+settings = Clarabel.Settings(verbose = true)
+MPC_setup!(model, P, q, A, b, cones, settings)
+```
 
 To solve the problem, you must make a subsequent call to [`solve!`](@ref)
 """
-function svm_setup!(s,D,C,settings::Settings)
-    #this allows total override of settings during setup
+function MPC_setup!(s,Q,R,Q̅,A,B,D,G,d,N,x0,settings::Settings)
+    #this allows total override of settings during MPC_setup
     s.settings = settings
-    svm_setup!(s,D,C)
+    MPC_setup!(s,Q,R,Q̅,A,B,D,G,d,N,x0)
 end
 
-function svm_setup!(s,D,C; kwargs...)
-    #this allows override of individual settings during setup
+function MPC_setup!(s,Q,R,Q̅,A,B,D,G,d,N,x0; kwargs...)
+    #this allows override of individual settings during MPC_setup
     settings_populate!(s.settings, Dict(kwargs))
-    svm_setup!(s,D,C)
+    MPC_setup!(s,Q,R,Q̅,A,B,D,G,d,N,x0)
 end
 
-# main setup function
-function svm_setup!(
+# main MPC_setup function
+function MPC_setup!(
     s::Solver{T},
+    Q::AbstractMatrix{T},
+    R::AbstractMatrix{T},
+    Q̅::AbstractMatrix{T},
+    A::AbstractMatrix{T},
+    B::AbstractMatrix{T},
     D::AbstractMatrix{T},
-    C::T     # No need to pass in cone as for QP, the only cone that will be used here is the NonnegativeConeT, no dof
+    G::AbstractMatrix{T},
+    d::Vector{T},
+    N::Integer,
+    x0::Vector{T}       
 ) where{T}
 
     #make this first to create the timers
-    s.info    = SvmInfo{T}()
+#    s.info    = MPCInfo{T}()
 
-    @timeit s.timers "setup!" begin
-        N = length(D)
-        # Construct cones as composite cones
-        s.cones  = CompositeCone{T}([NonnegativeCone{T}(N), NonnegativeCone{T}(N), NonnegativeCone{T}(N), NonnegativeCone{T}(N)])
-        s.data   = SvmProblemData{T}(D,C)   # Need for dimension or sanity check for SvmProblem
+    @timeit s.timers "MPC_setup!" begin
+        h = length(d)
+        s.cones  = CompositeCone{T}([NonnegativeCone{T}(h*N), NonnegativeCone{T}(h*N)])
+        s.data   = MPCProblemData{T}(Q,R,Q̅,A,B,D,G,d,N,x0)
 
-        s.variables = SvmVariables{T}(s.data.n,s.data.N,s.cones)
-        s.residuals = SvmResiduals{T}(s.data.n,s.data.N)
+        s.variables = MPCVariables{T}(s.data.n,s.data.m,s.data.N,s.data.h,s.cones)
+        s.residuals = MPCResiduals{T}(s.data.h,s.data.n,s.data.m,s.data.N)
 
         #equilibrate problem data immediately on setup.
         #this prevents multiple equlibrations if solve!
         #is called more than once.
+#        @timeit s.timers "equilibration" begin
+#            data_equilibrate!(s.data,s.cones,s.settings)
+#        end
 
         @timeit s.timers "kkt init" begin
-            s.kktsystem = SvmKKTSystem{T}(s.data,s.cones,s.settings)
+            s.kktsystem = MPCKKTSystem{T}(s.data,s.cones,s.settings)
         end
 
         # work variables for assembling step direction LHS/RHS
-        s.step_rhs  = SvmVariables{T}(s.data.n,s.data.N,s.cones)
-        s.step_lhs  = SvmVariables{T}(s.data.n,s.data.N,s.cones)
+        s.step_rhs  = MPCVariables{T}(s.data.n,s.data.m,s.data.N,s.data.h,s.cones)
+        s.step_lhs  = MPCVariables{T}(s.data.n,s.data.m,s.data.N,s.data.h,s.cones)
 
         # a saved copy of the previous iterate
-        s.prev_vars = SvmVariables{T}(s.data.n,s.data.N,s.cones)
+        s.prev_vars = MPCVariables{T}(s.data.n,s.data.m,s.data.N,s.data.h,s.cones)
 
         # user facing results go here
-        s.solution  = SvmSolution{T}(s.data.n,s.data.N)
+        s.solution    = MPCSolution{T}(s.data.n,s.data.m,s.data.h,s.data.N)
 
     end
 
     return s
 end
 
-"""No need to check dimension for SVM problem"""
-#=
 # sanity check problem dimensions passed by user
-"""Sanity check not need for SvmProblem"""
+#=
 function _check_dimensions(P,q,A,b,cones)
 
     n = length(q)
@@ -102,7 +140,6 @@ function _check_dimensions(P,q,A,b,cones)
 
 end
 =#
-
 
 # an enum for reporting strategy checkpointing
 @enum StrategyCheckpoint begin 
@@ -133,14 +170,13 @@ function solve!(
 
     # solver release info, solver config
     # problem dimensions, cone type etc
-    @notimeit begin
-        print_banner(s.settings.verbose)
-        info_print_configuration(s.info,s.settings,s.data,s.cones)
-        info_print_status_header(s.info,s.settings)
-    end
+#    @notimeit begin
+#        print_banner(s.settings.verbose)
+#       info_print_configuration(s.info,s.settings,s.data,s.cones)
+#        info_print_status_header(s.info,s.settings)
+#    end
 
-    info_reset!(s.info,s.timers)
-
+    #info_reset!(s.info,s.timers)
 
     @timeit s.timers "solve!" begin
 
@@ -167,21 +203,21 @@ function solve!(
             μ = variables_calc_mu(s.variables)
 
             # record scalar values from most recent iteration.
-            # This captures μ at iteration zero. 
+            # This captures μ at iteration zero.  
 
-            info_save_scalars(s.info, μ, α, σ, iter)
+#            info_save_scalars(s.info, μ, α, σ, iter)
 
             #convergence check and printing
             #--------------
 
-            info_update!(
-                s.info,s.data,s.variables,
-                s.residuals,s.settings,s.timers
-            )
-            @notimeit info_print_status(s.info,s.settings)
-            isdone = info_check_termination!(s.info,s.residuals,s.settings,iter)
+#            info_update!(
+#                s.info,s.data,s.variables,
+#                s.residuals,s.settings,s.timers
+#            )
+#            @notimeit info_print_status(s.info,s.settings)
+#            isdone = info_check_termination!(s.info,s.residuals,s.settings,iter)
 
-            # check for termination due to slow progress and update strategy
+            # # check for termination due to slow progress and update strategy
             if isdone
                 (action,scaling) = _strategy_checkpoint_insufficient_progress(s,scaling) 
                 if     action ∈ [NoUpdate,Fail]; break;
@@ -189,17 +225,11 @@ function solve!(
                 end
             end # allows continuation if new strategy provided
 
-
             #increment counter here because we only count
             #iterations that produce a KKT update 
-            
             iter += 1
-            # println("ITER = ", iter)
-            if(iter > 20)
-                break
-            end 
-
-            """No scaling for SVM problem
+               
+            """ Didn't consider scaling for the current MPC problem
             #update the scalings
             #--------------
             variables_scale_cones!(s.variables,s.cones,μ,scaling)
@@ -208,32 +238,26 @@ function solve!(
             #Update the KKT system and the constant parts of its solution.
             #Keep track of the success of each step that calls KKT
             #--------------
+         
             """Not used in here, didn't use the solver to solve for the system, only returns true"""
             @timeit s.timers "kkt update" begin
             is_kkt_solve_success = kkt_update!(s.kktsystem,s.data,s.cones)
             end
 
-
             #calculate the affine step
             #--------------
-            
             variables_affine_step_rhs!(
                 s.step_rhs, s.residuals,
                 s.variables
             )
 
-
-            """kkt_solver.jl directly solve the reduced system,
-            is it still needed to check for existence"""
             @timeit s.timers "kkt solve" begin
             is_kkt_solve_success = is_kkt_solve_success && 
                 kkt_solve!(
                     s.kktsystem, s.step_lhs, s.step_rhs,
                     s.data, s.variables, :affine
-                )  # Solve for and Update s.step_lhs, which is the affine step size
+                )
             end
-
-
 
             # combined step only on affine step success 
             if is_kkt_solve_success
@@ -281,7 +305,7 @@ function solve!(
             end 
 
             # Copy previous iterate in case the next one is a dud
-            info_save_prev_iterate(s.info,s.variables,s.prev_vars)
+#            info_save_prev_iterate(s.info,s.variables,s.prev_vars)
 
             variables_add_step!(s.variables,s.step_lhs,α)
 
@@ -304,10 +328,7 @@ function solve!(
     solution_finalize!(s.solution,s.data,s.variables,s.info,s.settings)
 
     @notimeit info_print_footer(s.info,s.settings)
-    println("info.gap_abs = \n", s.info.gap_abs)
-    println("info.gap_rel = \n", s.info.gap_rel)
-    println("info.res_primal = \n", s.info.res_primal)
-    println("info.res_dual = \n", s.info.res_dual)
+
     return s.solution
 end
 
@@ -317,50 +338,21 @@ function solver_default_start!(s::Solver{T}) where {T}
     # If there are only symmetric cones, use CVXOPT style initilization
     # Otherwise, initialize along central rays
 
-    if (is_symmetric(s.cones))
+    if (false && is_symmetric(s.cones))
+        println("Symmetric init")
         #set all scalings to identity (or zero for the zero cone)
         set_identity_scaling!(s.cones)
         #Refactor
         kkt_update!(s.kktsystem,s.data,s.cones)
         #solve for primal/dual initial points via KKT
-        kkt_solve_initial_point!(s.variables)
+        kkt_solve_initial_point!(s.kktsystem,s.variables,s.data)
         #fix up (z,s) so that they are in the cone
         variables_symmetric_initialization!(s.variables, s.cones)
 
-
-        ## Initialized at the correct termination value
-        # s.variables.w = [0.6666666666960108;
-        #                  0.6666666666467098]
-        # s.variables.b = 2.999999999948629
-        # SetVector(s.variables.q, [-4.809708187281103e-12;
-        #                           0.6666666666675825;
-        #                           0.33333333329447146;
-        #                           9.846812254465931e-11;
-        #                           3.537259374297719e-11;
-        #                           1.9999999999368754])
-        # SetVector(s.variables.ξ, [3.5991655976803164e-11;
-        #                           1.2373050806940264e-11;
-        #                           1.1917822752684126e-11;
-        #                           1.893487514317743e-11;
-        #                           5.140746579783298e-12;
-        #                           1.5815130244666894e-11])   
-        # SetVector(s.variables.λ1, [0.5555555555859659;
-        #                            0.9999999999809523;
-        #                            0.9999999999901622;
-        #                            0.7777777777668619;
-        #                            0.77777777779724;
-        #                            0.9999999999929797])  
-        # SetVector(s.variables.λ2, [0.4444444444119582;
-        #                            1.6973601797766883e-11;
-        #                            7.763780125690267e-12;
-        #                            0.22222222223106397;
-        #                            0.22222222220068538;
-        #                            4.9462529487953705e-12])                                               
-
-
     else
         #Assigns unit (z,s) and zeros the primal variables 
-        variables_unit_initialization!(s.variables)
+        println("Unit init")
+        variables_unit_initialization!(s.variables, s.cones)
     end
 
     return nothing
@@ -376,8 +368,6 @@ function solver_get_step_length(s::Solver{T},steptype::Symbol,scaling::ScalingSt
     )
 
     # additional barrier function limits for asymmetric cones
-    """Since cones in SVM problem are NonnegativeCone, which is symmetric,
-    so the following won't get activated"""
     if (!is_symmetric(s.cones) && steptype == :combined && scaling == Dual)
         αinit = α
         α = solver_backtrack_step_to_barrier(s,αinit)
@@ -488,6 +478,3 @@ end
 
 get_solution(s::Solver{T}) where {T} = s.solution
 get_info(s::Solver{T}) where {T} = s.info
-
-
-
