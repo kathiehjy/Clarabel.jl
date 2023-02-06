@@ -154,14 +154,14 @@ SvmInfo(args...) = SvmInfo{DefaultFloat}(args...)
 # ---------------
 
 mutable struct SvmKKTSystem{T} <: AbstractKKTSystem{T}
-""" Encode the reduced KKT system
-    Not sure
+""" Memory pre-allocation， 
+so don't need to allocate memory at each iteration when solving the linear system
 """
     #the KKT system solver
     # kktsolver::AbstractKKTSolver{T}
 
     #solution vector for reduced KKT system 
-    # Memory pre-allocation, so don't need to allocate memory at each iteration when solving the linear system
+    
     w::Vector{T}
     b::T
     λ1::Vector{T}

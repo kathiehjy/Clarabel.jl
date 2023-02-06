@@ -75,16 +75,16 @@ end
 # main MPC_setup function
 function MPC_setup!(
     s::Solver{T},
-    Q::AbstractMatrix{T},
-    R::AbstractMatrix{T},
-    Q̅::AbstractMatrix{T},
-    A::AbstractMatrix{T},
-    B::AbstractMatrix{T},
-    D::AbstractMatrix{T},
-    G::AbstractMatrix{T},
-    d::Vector{T},
-    N::Integer,
-    x0::Vector{T}       
+    Q,
+    R,
+    Q̅,
+    A,
+    B,
+    D,
+    G,
+    d,
+    N,
+    x0       
 ) where{T}
 
     #make this first to create the timers

@@ -201,7 +201,9 @@ mutable struct MPCKKTSystem{T} <: AbstractKKTSystem{T}
 
 
         function MPCKKTSystem{T}(
-            #constructor arguments go here
+            data::MPCProblemData{T},
+            cones::CompositeCone{T},
+            settings::Settings{T}
         ) where {T}
 
         #constructor details go here
