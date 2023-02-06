@@ -4,7 +4,7 @@ using LinearAlgebra
 
 # A, B, D, G, Q, R, Q̅ must be matrix
 A = [2. 1; 0.5 2]
-B = [1.; 0]
+B = [1.; 3]
 B = reshape(B, length(B), 1)
 D = [1.; 1]
 D = reshape(D, length(D), 1)

@@ -48,7 +48,7 @@ module Clarabel
     #include("./SVMinfo_print.jl")
     #include("./SVMsolver.jl")
 
-    #include("./MPCinfo_print.jl")
+    include("./MPCinfo_print.jl")
     include("./MPCsolver.jl")
 
     #conic constraints.  Additional

@@ -13,6 +13,9 @@ mutable struct MPCProblemData{T} <: AbstractProblemData{T}
     Q::AbstractMatrix{T}
     R::AbstractMatrix{T}
     Q̅::AbstractMatrix{T}
+    inv_Q::AbstractMatrix{T}
+    inv_R::AbstractMatrix{T}
+    inv_Q̅::AbstractMatrix{T}
     A::AbstractMatrix{T}
     B::AbstractMatrix{T}
     D::AbstractMatrix{T}
@@ -39,6 +42,9 @@ mutable struct MPCProblemData{T} <: AbstractProblemData{T}
         Q = deepcopy(Q)
         R = deepcopy(R)
         Q̅ = deepcopy(Q̅)
+        inv_Q = inv(Q)
+        inv_R = inv(R)
+        inv_Q̅ = inv(Q̅)
         A = deepcopy(A)
         B = deepcopy(B)
         D = deepcopy(D)
@@ -49,7 +55,7 @@ mutable struct MPCProblemData{T} <: AbstractProblemData{T}
         m = size(R, 1)
         x0 = deepcopy(x0)
 
-        new(Q, R, Q̅, A, B, D, G, d, N, n, m, h, x0)
+        new(Q, R, Q̅, inv_Q, inv_R, inv_Q̅, A, B, D, G, d, N, n, m, h, x0)
     end
 
 

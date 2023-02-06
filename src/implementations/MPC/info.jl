@@ -7,7 +7,34 @@ function info_update!(
     timers::TimerOutput
 ) where {T}
 
-    error("Function not yet implemented.")
+    # Update the values for attributes of the SvmInfo
+    # μ, step_length, sigma, iterations are updated in info_save_scalars
+    info.cost_primal = 0.5*tr(transpose(variables.x)*data.Q*variables.x) + 0.5*tr(transpose(variables.u)*data.R*variables.u) + 0.5*tr(transpose(variables.x_end)*data.Q̅*variables.x_end)
+   
+    # Compute reusable constants for dual cost
+    const1 = transpose(data.G)*variables.λ_m[:,1] - transpose(data.A)*variables.v[:,1]
+    const2 = transpose(data.G)*variables.λ_m[:,2:end] - transpose(data.A)*variables.v[:,2:end] + variables.v[:,1:end-1]
+    const3 = transpose(data.D)*variables.λ_m + transpose(data.B)*variables.v
+    
+    info.cost_dual = -0.5*transpose(const1)*data.inv_Q*const1 - 0.5*tr(transpose(const2)*data.inv_Q*const2) - 0.5*transpose(variables.v[:,end])*data.inv_Q̅*variables.v[:,end] - 0.5*tr(transpose(const3)*data.inv_R*const3) - sum(transpose(variables.λ_m)*data.d)
+
+    # r1, r2, r3, r4 are matrix, need to find the maximum element as primal and dual residual
+    info.res_primal = max(maximum(residuals.r3),maximum(residuals.r4))
+    info.res_dual = max(maximum(residuals.r1),maximum(residuals.r2),maximum(residuals.r_end))
+
+    #absolute and relative gaps
+    info.gap_abs    = abs(info.cost_primal - info.cost_dual)
+    if(info.cost_primal > zero(T) && info.cost_dual < zero(T))
+        info.gap_rel = floatmax(T)
+    else
+        info.gap_rel = info.gap_abs / max(one(T),min(abs(info.cost_primal),abs(info.cost_dual)))
+    end
+
+    #κ/τ. For SVM problem κ = 0, τ = 1
+    info.ktratio = 0
+
+    #solve time so far (includes setup!)
+    info_get_solve_time!(info,timers)
 
 end
 
@@ -226,6 +253,8 @@ function _check_convergence(
     dinf_status::SolverStatus,
 ) where {T}
 
+    """Currently, info.ktratio is set to be 0
+    """
     if info.ktratio < tol_ktratio && _is_solved(info, tol_gap_abs, tol_gap_rel, tol_feas)
         info.status = solved_status
     elseif info.ktratio > 1/tol_ktratio
