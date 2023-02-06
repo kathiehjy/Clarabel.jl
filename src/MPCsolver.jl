@@ -218,17 +218,21 @@ function solve!(
 #            isdone = info_check_termination!(s.info,s.residuals,s.settings,iter)
 
             # # check for termination due to slow progress and update strategy
-            if isdone
-                (action,scaling) = _strategy_checkpoint_insufficient_progress(s,scaling) 
-                if     action ∈ [NoUpdate,Fail]; break;
-                elseif action === Update; continue; 
-                end
-            end # allows continuation if new strategy provided
+#            if isdone
+#                (action,scaling) = _strategy_checkpoint_insufficient_progress(s,scaling) 
+#                if     action ∈ [NoUpdate,Fail]; break;
+#                elseif action === Update; continue; 
+#                end
+#            end # allows continuation if new strategy provided
 
             #increment counter here because we only count
             #iterations that produce a KKT update 
             iter += 1
-               
+            println("ITER = ", iter)
+            if(iter > 20)
+                break
+            end 
+
             """ Didn't consider scaling for the current MPC problem
             #update the scalings
             #--------------
@@ -298,11 +302,11 @@ function solve!(
             α = solver_get_step_length(s,:combined,scaling)
 
             # check for undersized step and update strategy
-            (action,scaling) = _strategy_checkpoint_small_step(s, α, scaling)
-            if     action === NoUpdate; ();  #just keep going 
-            elseif action === Update; α = zero(T); continue; 
-            elseif action === Fail;   α = zero(T); break; 
-            end 
+#            (action,scaling) = _strategy_checkpoint_small_step(s, α, scaling)
+#            if     action === NoUpdate; ();  #just keep going 
+#            elseif action === Update; α = zero(T); continue; 
+#            elseif action === Fail;   α = zero(T); break; 
+#            end 
 
             # Copy previous iterate in case the next one is a dud
 #            info_save_prev_iterate(s.info,s.variables,s.prev_vars)
@@ -319,16 +323,21 @@ function solve!(
 
     # Check we if actually took a final step.  If not, we need 
     # to recapture the scalars and print one last line 
-    if(α == zero(T))
-        info_save_scalars(s.info, μ, α, σ, iter)
-        @notimeit info_print_status(s.info,s.settings)
-    end 
+#    if(α == zero(T))
+#        info_save_scalars(s.info, μ, α, σ, iter)
+#        @notimeit info_print_status(s.info,s.settings)
+#    end 
 
-    info_finalize!(s.info,s.residuals,s.settings,s.timers)  #halts timers
-    solution_finalize!(s.solution,s.data,s.variables,s.info,s.settings)
+#    info_finalize!(s.info,s.residuals,s.settings,s.timers)  #halts timers
+#    solution_finalize!(s.solution,s.data,s.variables,s.info,s.settings)
 
-    @notimeit info_print_footer(s.info,s.settings)
+#    @notimeit info_print_footer(s.info,s.settings)
 
+    """solution.x[:,1] and variables.x[:,1] all correspond to x0,
+    they must be the same
+    """
+    println(s.solution.x[:,1])
+    println(s.variables.x[:,1])
     return s.solution
 end
 
@@ -352,7 +361,7 @@ function solver_default_start!(s::Solver{T}) where {T}
     else
         #Assigns unit (z,s) and zeros the primal variables 
         println("Unit init")
-        variables_unit_initialization!(s.variables, s.cones)
+        variables_unit_initialization!(s.variables, s.data)
     end
 
     return nothing

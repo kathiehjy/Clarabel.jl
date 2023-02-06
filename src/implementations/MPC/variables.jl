@@ -80,12 +80,14 @@ function variables_add_step!(
     step::MPCVariables{T}, α::T
 ) where {T}
 
-    @. variables.x  += α*step.x
-    @. variables.x_end += α*step.x_end
-    @. variables.u  += α*step.u
-    @. variables.v  += α*step.v
-    @. variables.λ  += α*step.λ 
-    @. variables.q  += α*step.q 
+    # The first element of matrix x corresponds to x0, which is known
+    # Only x₁~xₙ need to update
+    @. variables.x[:,2:end] += α*step.x[:,2:end]
+    @. variables.x_end      += α*step.x_end
+    @. variables.u          += α*step.u
+    @. variables.v          += α*step.v
+    @. variables.λ          += α*step.λ 
+    @. variables.q          += α*step.q 
 
     return nothing
 end
@@ -100,12 +102,12 @@ function variables_affine_step_rhs!(
     variables::MPCVariables{T},
 ) where{T}
 
-    @. d.x    =  r.r1
-    @. d.u    =  r.r2
-    @. d.λ_m  =  r.r3
-    @. d.v    =  r.r4
-    d.λ       =  variables.q .* variables.λ
-    @. d.x_end=  r.r_end 
+    @. d.x     =  r.r1
+    @. d.u     =  r.r2
+    @. d.λ_m   =  r.r3
+    @. d.v     =  r.r4
+    d.λ       .=  variables.q .* variables.λ
+    @. d.x_end =  r.r_end 
 
     return nothing
 end
@@ -115,7 +117,6 @@ function variables_combined_step_rhs!(
     d::MPCVariables{T},
     r::MPCResiduals{T},
     variables::MPCVariables{T},
-    cones::CompositeCone{T},
     step::MPCVariables{T},
     σ::T,
     μ::T
@@ -123,12 +124,12 @@ function variables_combined_step_rhs!(
 
 
     dotσμ = σ * μ
-    @. d.x    = (one(T) - dotσμ)*r.r1
-    @. d.u    = (one(T) - dotσμ)*r.r2
-    @. d.λ_m  = (one(T) - dotσμ)*r.r3
-    @. d.v    = (one(T) - dotσμ)*r.r4
-    d.λ       = variables.q .*variables.λ + step.q .*step.λ .+dotσμ
-    @. d.x_end= (one(T) - dotσμ)*r.r_end 
+    @. d.x     = (one(T) - dotσμ)*r.r1
+    @. d.u     = (one(T) - dotσμ)*r.r2
+    @. d.λ_m   = (one(T) - dotσμ)*r.r3
+    @. d.v     = (one(T) - dotσμ)*r.r4
+    d.λ       .= variables.q .*variables.λ + step.q .*step.λ .+dotσμ
+    @. d.x_end = (one(T) - dotσμ)*r.r_end 
 
 end
 
@@ -156,9 +157,11 @@ end
 # the primal variables.   Used for nonsymmetric problems.
 function variables_unit_initialization!(
     variables::MPCVariables{T},
+    data::MPCProblemData{T}
 ) where {T}
 
     variables.x     .= zero(T)
+    variables.x[:,1].= data.x0
     variables.x_end .= zero(T)
     variables.u     .= zero(T)
     variables.v     .= zero(T)

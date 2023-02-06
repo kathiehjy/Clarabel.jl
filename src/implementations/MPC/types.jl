@@ -197,16 +197,32 @@ MPCInfo(args...) = MPCInfo{DefaultFloat}(args...)
 
 mutable struct MPCKKTSystem{T} <: AbstractKKTSystem{T}
 
-    # Problem specific fields go here.
+    x::Matrix{T}
+    x_end::Vector{T}
+    u::Matrix{T}
+    v::Matrix{T}           # Lagranian multiplier for equility constraints
+    λ::Vector{T}      # Lagranian multiplier for inequility constraints λ>=0
+    q::Vector{T} 
 
 
-        function MPCKKTSystem{T}(
-            data::MPCProblemData{T},
-            cones::CompositeCone{T},
-            settings::Settings{T}
-        ) where {T}
 
-        #constructor details go here
+    function MPCKKTSystem{T}(
+        data::MPCProblemData{T},
+        cones::CompositeCone{T},
+        settings::Settings{T}
+    ) where {T}
+        n = data.n
+        N = data.N
+        m = data.m
+        h = data.h
+        x = Matrix{T}(undef,n,N)
+        x_end = Vector{T}(undef,n)
+        u = Matrix{T}(undef,m,N)
+        v = Matrix{T}(undef,n,N)
+        λ = Vector{T}(undef,h*N)
+        q = Vector{T}(undef,h*N)
+
+        return new(x,x_end,u,v,λ,q)
 
     end
 
@@ -239,7 +255,7 @@ mutable struct MPCSolution{T} <: AbstractSolution{T}
 
 end
 
-function MPCSolution{T}(n,m,h,N) where {T <: AbstractFloat}
+function MPCSolution{T}(n::Integer,m::Integer,h::Integer,N::Integer) where {T <: AbstractFloat}
     x = Matrix{T}(undef,n, N)
     x_end = Vector{T}(undef,n)
     u = Matrix{T}(undef,m, N)

@@ -1,9 +1,13 @@
 using Clarabel
 using LinearAlgebra
 # Problem data for MPC problem
+
+# A, B, D, G, Q, R, Q̅ must be matrix
 A = [2. 1; 0.5 2]
-B = [1. 0]
-D = [1. 1]
+B = [1.; 0]
+B = reshape(B, length(B), 1)
+D = [1.; 1]
+D = reshape(D, length(D), 1)
 G = [1. 0; 0 1]
 N = 4
 
@@ -17,3 +21,4 @@ Q̅ = [1. 0; 0 1]
 settings = Clarabel.Settings(verbose = true)
 solver   = Clarabel.Solver()
 Clarabel.MPC_setup!(solver,Q,R,Q̅,A,B,D,G,d,N,x0,settings)
+result = Clarabel.solve!(solver)

@@ -54,7 +54,7 @@ function kkt_solve!(
     λ_m_copy = deepcopy(variables.λ_m) 
     q_m_copy = deepcopy(variables.q_m)
 
-    K = Diagonal(inv.(vec(λ_m_copy[:,1])))*Diagonal(vec(q_m_copy[:,1]))
+    K = Diagonal(inv.(λ_m_copy[:,1]))*Diagonal(q_m_copy[:,1])
     coefficient[1:m,1:m]             .= data.R
     coefficient[1:m,1+m:m+h]         .= transpose(data.D)
     coefficient[1:m,1+m+h:n+m+h]     .= transpose(data.B)
@@ -70,7 +70,7 @@ function kkt_solve!(
     RHS[m+h+1:n+m+h] .= r4[:,1]
 
     for i in 1:N-1
-        K = Diagonal(inv.(vec(λ_m_copy[:,i+1]))*Diagonal(vec(q_m_copy[:,i+1])))
+        K = Diagonal(inv.(λ_m_copy[:,i+1]))*Diagonal(q_m_copy[:,i+1])
         # Construct the coefficient matrix for the MPC problem
         coefficient[i*dim+1-n:i*dim,i*dim+1-n:i*dim]                 .= data.Q
         coefficient[i*dim+1-n:i*dim,i*dim+1+m:i*dim+m+h]             .= -transpose(data.G)
@@ -89,7 +89,7 @@ function kkt_solve!(
         # Construct the RHS of the KKTSystem
         RHS[i*dim+1-n:i*dim]         .= r1[:,i+1]
         RHS[i*dim+1:i*dim+m]         .= r2[:,i+1]
-        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - K * variables.λ_m_copy[:,i+1]
+        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - K * λ_m_copy[:,i+1]
         RHS[i*dim+m+h+1:i*dim+n+m+h] .= r4[:,i+1]
     end
 
@@ -99,7 +99,7 @@ function kkt_solve!(
     result = -inv(coefficient) * RHS
 
 
-    lhs.x[:,1] .= x0
+    lhs.x[:,1] .= data.x0
     lhs.u[:,1] = result[1:m]
     lhs.λ_m[:,1] = result[1+m:m+h] 
     lhs.v[:,1] = result[1+m+h:n+m+h] 
@@ -109,10 +109,10 @@ function kkt_solve!(
         lhs.λ_m[:,i+1] = result[i*dim+1+m:i*dim+m+h] 
         lhs.v[:,i+1] = result[i*dim+1+m+h:i*dim+n+m+h] 
     end
-    lhs.λ = vec(lhs.λ_m)
-    Ttotal = Diagonal(vec(inv.(λ_m_copy))).*Diagonal(vec(variables.q_m))
+    lhs.λ .= vec(lhs.λ_m)
+    Ttotal = Diagonal(inv.(λ_m_copy)).*Diagonal(q_m_copy)
     lhs.q_m = -Ttotal*(lhs.λ_m + variables.λ_m)
-    lhs.q = vec(lhs.q_m)
+    lhs.q .= vec(lhs.q_m)
     lhs.x_end = result[total_d-n+1:end]
     
     return true
