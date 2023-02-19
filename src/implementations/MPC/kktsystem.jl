@@ -46,6 +46,7 @@ function kkt_solve!(
     r2 = deepcopy(rhs.u)
     r3 = deepcopy(rhs.λ_m)
     r4 = deepcopy(rhs.v)
+    Λ  = deepcopy(rhs.q_m)
     r_end = deepcopy(rhs.x_end)
 
     coefficient = zeros(total_d, total_d)
@@ -64,9 +65,9 @@ function kkt_solve!(
     coefficient[1+m+h:n+m+h,dim-n+1:dim] .= -I(n)
     coefficient[dim-n+1:dim,m+h+1:m+h+n] .= -I(n) 
 
-  
+
     RHS[1:m]         .= r2[:,1]
-    RHS[m+1:m+h]     .= r3[:,1] - K * variables.λ_m[:,1]
+    RHS[m+1:m+h]     .= r3[:,1] - Diagonal(inv.(variables.λ_m[:,1])) * Λ[:,1]
     RHS[m+h+1:n+m+h] .= r4[:,1]
 
     for i in 1:N-1
@@ -89,7 +90,7 @@ function kkt_solve!(
         # Construct the RHS of the KKTSystem
         RHS[i*dim+1-n:i*dim]         .= r1[:,i+1]
         RHS[i*dim+1:i*dim+m]         .= r2[:,i+1]
-        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - K * λ_m_copy[:,i+1]
+        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - Diagonal(inv.(variables.λ_m[:,i+1])) * Λ[:,i+1]
         RHS[i*dim+m+h+1:i*dim+n+m+h] .= r4[:,i+1]
     end
 
@@ -111,7 +112,7 @@ function kkt_solve!(
     end
     lhs.λ .= vec(lhs.λ_m)
     Ttotal = Diagonal(inv.(λ_m_copy)).*Diagonal(q_m_copy)
-    lhs.q_m = -Ttotal*(lhs.λ_m + variables.λ_m)
+    lhs.q_m = -Ttotal*lhs.λ_m - Diagonal(inv.(variables.λ_m)) * Λ
     lhs.q .= vec(lhs.q_m)
     lhs.x_end = result[total_d-n+1:end]
     

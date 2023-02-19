@@ -11,12 +11,8 @@ function info_update!(
     # μ, step_length, sigma, iterations are updated in info_save_scalars
     info.cost_primal = 0.5*tr(transpose(variables.x)*data.Q*variables.x) + 0.5*tr(transpose(variables.u)*data.R*variables.u) + 0.5*tr(transpose(variables.x_end)*data.Q̅*variables.x_end)
    
-    # Compute reusable constants for dual cost
-    const1 = transpose(data.G)*variables.λ_m[:,1] - transpose(data.A)*variables.v[:,1]
-    const2 = transpose(data.G)*variables.λ_m[:,2:end] - transpose(data.A)*variables.v[:,2:end] + variables.v[:,1:end-1]
-    const3 = transpose(data.D)*variables.λ_m + transpose(data.B)*variables.v
-    
-    info.cost_dual = -0.5*transpose(const1)*data.inv_Q*const1 - 0.5*tr(transpose(const2)*data.inv_Q*const2) - 0.5*transpose(variables.v[:,end])*data.inv_Q̅*variables.v[:,end] - 0.5*tr(transpose(const3)*data.inv_R*const3) - sum(transpose(variables.λ_m)*data.d)
+    info.cost_dual = (0.5*transpose(variables.x[:,1])*data.Q-transpose(variables.λ_m[:,1])*data.G+transpose(variables.v[:,1])*data.A)*variables.x[:,1] - 0.5*tr(transpose(variables.x[:,2:end])*data.Q*variables.x[:,2:end]) - 0.5*tr(transpose(variables.u)*data.R*variables.u) - 0.5*tr(transpose(variables.x_end)*data.Q̅*variables.x_end) - sum(transpose(variables.λ_m) * data.d)
+
 
     # r1, r2, r3, r4 are matrix, need to find the maximum element as primal and dual residual
     info.res_primal = max(maximum(residuals.r3),maximum(residuals.r4))

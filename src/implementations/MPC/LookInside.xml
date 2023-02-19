@@ -1,0 +1,32 @@
+julia> result.x
+1×1 Matrix{Float64}:
+ 1.0
+
+julia> result.u
+1×1 Matrix{Float64}:
+ -0.5
+
+julia> result.x_end
+1-element Vector{Float64}:
+ 0.5
+
+julia> result
+Clarabel.MPCSolution{Float64}([1.0;;], [0.5], [-0.5;;], [0.5;;], [9.961158740030835e-30], [99.5], Clarabel.UNSOLVED, 0.75, 0.017419666, 0x00000014, 0.0, 0.0)
+
+julia> result.
+iterations  q           r_prim      status      v           x_end
+obj_val     r_dual      solve_time  u           x           λ
+julia> result.
+iterations  q           r_prim      status      v           x_end
+obj_val     r_dual      solve_time  u           x           λ
+julia> result.λ
+1-element Vector{Float64}:
+ 9.961158740030835e-30
+
+julia> result.v
+1×1 Matrix{Float64}:
+ 0.5
+
+
+
+INSUFFICIENT_PROGRESS evaluated at MPCsolver line 464

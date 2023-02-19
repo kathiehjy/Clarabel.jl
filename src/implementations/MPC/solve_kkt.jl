@@ -317,11 +317,11 @@ function solve_symmetric_kkt_with_initial(
         coefficient[i*dim+1+m+h:i*dim+n+m+h,i*dim+1:i*dim+m]         .= B
         coefficient[i*dim+1+m+h:i*dim+n+m+h,i*dim+1+m+h+n:i*dim+2*n+m+h] .= -I(n)
         coefficient[i*dim+1+m+h+n:i*dim+2*n+m+h,i*dim+1+m+h:i*dim+n+m+h] .= -I(n) 
-
+        Λ = Diagonal(q[:,i+1])*λ[:,i+1]
         # Construct the RHS of the KKTSystem
         RHS[i*dim+1-n:i*dim]         .= r1[:,i+1]
         RHS[i*dim+1:i*dim+m]         .= r2[:,i+1]
-        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - K * λ[:,i+1]
+        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - Diagonal(inv.(λ[:,i+1]))*Λ
         RHS[i*dim+m+h+1:i*dim+n+m+h] .= r4[:,i+1]
     end
 

@@ -29,8 +29,9 @@ Populates a [`Solver`](@ref) with a cost function defined by `Q`, `R` and `Q̅`,
 The solver will be configured to solve the following optimization problem:
 
 ```
-min   1/2 x'Px + q'x
-s.t.  Ax + s = b, s ∈ K
+min ∑ 1/2 (xₖ'Qxₖ + uₖ'Ruₖ) + 1/2 xₙ'Q̅xₙ   
+s.t.  xₖ₊₁ = Axₖ + Buₖ,
+      Duₖ - Gxₖ ≤ d
 ```
 
 All data matrices must be sparse.   The matrix `P` is assumed to be symmetric and positive semidefinite, and only the upper triangular part is used.
@@ -218,7 +219,7 @@ function solve!(
             isdone = info_check_termination!(s.info,s.residuals,s.settings,iter)
 
             # check for termination due to slow progress and update strategy
-            if isdone
+            if isdone && iter > 5
                 (action,scaling) = _strategy_checkpoint_insufficient_progress(s,scaling) 
                 if     action ∈ [NoUpdate,Fail]; break;
                 elseif action === Update; continue; 
@@ -300,7 +301,9 @@ function solve!(
             #compute final step length and update the current iterate
             #--------------
             α = solver_get_step_length(s,:combined,scaling)
-
+#=            println(α)
+            println(s.variables)
+            println(s.step_lhs)=#
             # check for undersized step and update strategy
             (action,scaling) = _strategy_checkpoint_small_step(s, α, scaling)
             if     action === NoUpdate; ();  #just keep going 

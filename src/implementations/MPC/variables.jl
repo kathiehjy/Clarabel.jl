@@ -106,7 +106,9 @@ function variables_affine_step_rhs!(
     @. d.u     =  r.r2
     @. d.λ_m   =  r.r3
     @. d.v     =  r.r4
-    d.λ       .=  variables.q .* variables.λ
+    for i in 1:size(r.r1,2)
+        d.q_m[:,i] = Diagonal(variables.q_m[:,i]) * variables.λ_m[:,i]
+    end
     @. d.x_end =  r.r_end 
 
     return nothing
@@ -128,7 +130,9 @@ function variables_combined_step_rhs!(
     @. d.u     = (one(T) - dotσμ)*r.r2
     @. d.λ_m   = (one(T) - dotσμ)*r.r3
     @. d.v     = (one(T) - dotσμ)*r.r4
-    d.λ       .= variables.q .*variables.λ + step.q .*step.λ .+dotσμ
+    for i in 1:size(r.r1,2)
+        d.q_m[:,i] = Diagonal(variables.q_m[:,i]) * variables.λ_m[:,i] + Diagonal(step.q_m[:,i]) * step.λ_m[:,i] .+ dotσμ
+    end
     @. d.x_end = (one(T) - dotσμ)*r.r_end 
 
 end
