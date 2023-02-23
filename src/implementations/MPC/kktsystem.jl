@@ -99,8 +99,8 @@ function kkt_solve!(
 
     result = -inv(coefficient) * RHS
 
-
-    lhs.x[:,1] .= data.x0
+    # lhs is to store the steps taken by each variable, since x0 is a constant, step for x[:,1] is always 0 
+    lhs.x[:,1] .= 0
     lhs.u[:,1] = result[1:m]
     lhs.λ_m[:,1] = result[1+m:m+h] 
     lhs.v[:,1] = result[1+m+h:n+m+h] 

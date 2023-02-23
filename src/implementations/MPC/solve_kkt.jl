@@ -298,7 +298,8 @@ function solve_symmetric_kkt_with_initial(
 
   
     RHS[1:m]         .= r2[:,1]
-    RHS[m+1:m+h]     .= r3[:,1] - K * λ[:,1]
+    #RHS[m+1:m+h]     .= r3[:,1] - K * λ[:,1]
+    RHS[m+1:m+h]     .= r3[:,1] - Diagonal(inv.(λ[:,1]))*(-10178.589294984804)
     RHS[m+h+1:n+m+h] .= r4[:,1]
 
     for i in 1:N-1
@@ -321,7 +322,8 @@ function solve_symmetric_kkt_with_initial(
         # Construct the RHS of the KKTSystem
         RHS[i*dim+1-n:i*dim]         .= r1[:,i+1]
         RHS[i*dim+1:i*dim+m]         .= r2[:,i+1]
-        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - Diagonal(inv.(λ[:,i+1]))*Λ
+        #RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - Diagonal(inv.(λ[:,i+1]))*Λ
+        RHS[i*dim+m+1:i*dim+m+h]     .= r3[:,i+1] - Diagonal(inv.(λ[:,i+1]))*(-4500.1892949848025)
         RHS[i*dim+m+h+1:i*dim+n+m+h] .= r4[:,i+1]
     end
 
@@ -349,7 +351,8 @@ function solve_symmetric_kkt_with_initial(
         Δv[:,i+1] = result[i*dim+1+m+h:i*dim+n+m+h] 
     end
     Ktotal = Diagonal(inv.(λ)).*Diagonal(q)
-    Δq = -Ktotal*(Δλ + λ)
+    #Δq = -Ktotal*(Δλ + λ)
+    Δq = -Ktotal*Δλ - Diagonal(inv.(λ))*([-10178.589294984804 -4500.1892949848025])
     Δx_end = result[total_d-n+1:end]
 
     return Δx, Δu, Δλ, Δv, Δq, Δx_end
@@ -358,7 +361,7 @@ end
 
 
 N = 2
-A = [1 5; 0 2]
+#=A = [1 5; 0 2]
 B = [3; 1]
 D = 1
 G = Matrix([0 1])
@@ -371,7 +374,26 @@ r1 = [1.5 0.1; 0.9 0.5]
 r2 = Matrix([1 1])
 r3 = Matrix([2 2])
 r4 = [0.1 0.5; 0.9 1]
-r_end = [2; 3]
+r_end = [2; 3]=#
+
+A = I(1)*1.
+B = I(1)*1.
+D = I(1)*1.
+G = 1 *I(1)*1.
+d = [100.]
+N = 2
+x0 = [1.]
+R = I(1)*1.
+Q = I(1)*1.
+Q̅ = I(1)*1.
+λ = Matrix([1. 1])
+q = Matrix([1. 1])
+r1 = Matrix([0. -1]).*0.0292949848018218
+r2 = Matrix([1 1.]).*0.0292949848018218
+r3 = Matrix([-100. -99]).*0.0292949848018218
+r4 = Matrix([1 0.]).*0.0292949848018218
+r_end = I(1)*0
+
 (Δx, Δu, Δλ, Δv, Δq, Δx_end) = solve_symmetric_kkt_with_initial(N,x0,r1,r2,r3,r4,r_end,Q,R,Q̅,A,B,D,G,λ,q)
 
 
@@ -384,7 +406,7 @@ x_one_step_ahead[:,end] = deepcopy(Δx_end)
 λ_m = reshape(Δλ, h, :)
 q_m = reshape(Δq, h, :)
 
-r1[:,1] = [0 0] 
+r1[:,1] = [0.] 
 r1[:,2] = Q * Δx[:,2] - transpose(G) * λ_m[:,2] + transpose(A) * Δv[:,2] - Δv[:,1]
 r2 = R * Δu + transpose(D) * λ_m + transpose(B) * Δv 
 r31 = D * Δu + q_m  # gives the correct first column, coefficient changed due to the elimination of x0
@@ -406,6 +428,7 @@ println(r42)
 println(rλ)
 println(r_end)
 
+
 # The solution of solving the KKT system are not the same,
 # as the simultaneous functions have changed 
 # println(" ")
@@ -415,3 +438,10 @@ println(r_end)
 # println(Δv1-Δv)
 # println(Δq1-Δq)
 # println(Δx_end1-Δx_end)
+
+println(Δx)
+println(Δu)
+println(Δλ)
+println(Δv)
+println(Δq)
+println(Δx_end)

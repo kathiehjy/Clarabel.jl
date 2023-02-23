@@ -26,9 +26,13 @@ function variables_calc_step_length(
     (αλ,αq) = step_length(cones, step.λ, step.q, variables.λ, variables.q, settings, α)
     α = min(αλ, αq)
 
-    if(steptype == :combined)
+    #if(steptype == :combined)
+    #α *= settings.max_step_fraction
+    #end
+
+    #if(steptype == :combined)
         α *= settings.max_step_fraction
-    end
+    #end
 
     return α   
 
@@ -59,6 +63,8 @@ function variables_copy_from(dest::MPCVariables{T},src::MPCVariables{T}) where {
     dest.v .= src.v 
     dest.λ .= src.λ
     dest.q .= src.q
+    dest.λ_m.= src.λ_m
+    dest.q_m.= src.q_m
 
 end
 
@@ -88,7 +94,8 @@ function variables_add_step!(
     @. variables.v          += α*step.v
     @. variables.λ          += α*step.λ 
     @. variables.q          += α*step.q 
-
+    #@. variables.λ_m        += α*step.λ_m
+    #@. variables.q_m        += α*step.q_m
     return nothing
 end
 
@@ -126,12 +133,15 @@ function variables_combined_step_rhs!(
 
 
     dotσμ = σ * μ
+    println(dotσμ)
+    println(1-dotσμ)
     @. d.x     = (one(T) - dotσμ)*r.r1
     @. d.u     = (one(T) - dotσμ)*r.r2
     @. d.λ_m   = (one(T) - dotσμ)*r.r3
     @. d.v     = (one(T) - dotσμ)*r.r4
     for i in 1:size(r.r1,2)
-        d.q_m[:,i] = Diagonal(variables.q_m[:,i]) * variables.λ_m[:,i] + Diagonal(step.q_m[:,i]) * step.λ_m[:,i] .+ dotσμ
+        #d.q_m[:,i] = Diagonal(variables.q_m[:,i]) * variables.λ_m[:,i] + Diagonal(step.q_m[:,i]) * step.λ_m[:,i] .+ dotσμ
+        d.q_m[:,i] = Diagonal(variables.q_m[:,i]) * variables.λ_m[:,i] .- dotσμ + Diagonal(step.q_m[:,i]) * step.λ_m[:,i] 
     end
     @. d.x_end = (one(T) - dotσμ)*r.r_end 
 
@@ -169,6 +179,8 @@ function variables_unit_initialization!(
     variables.x_end .= zero(T)
     variables.u     .= zero(T)
     variables.v     .= zero(T)
+    #variables.q_m   .= zero(T)
+    #variables.λ_m   .= zero(T)
     # λ and q are known to be NonnegativeCone,
     # so no need to call generic initilization method for conic objects
     variables.λ     .= one(T)

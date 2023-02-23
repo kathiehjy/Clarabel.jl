@@ -229,16 +229,15 @@ function solve!(
             #increment counter here because we only count
             #iterations that produce a KKT update 
             iter += 1
-            println("ITER = ", iter)
             if(iter > 20)
                 break
             end 
 
             """ Didn't consider scaling for the current MPC problem
             #update the scalings
-            #--------------
-            variables_scale_cones!(s.variables,s.cones,μ,scaling)
-            """
+            #--------------"""
+            #variables_scale_cones!(s.variables,s.cones,μ,scaling)
+            
 
             #Update the KKT system and the constant parts of its solution.
             #Keep track of the success of each step that calls KKT
@@ -264,6 +263,12 @@ function solve!(
                 )
             end
 
+            #error("Foo")
+            println(s.step_lhs.q_m)
+            println(s.step_lhs.λ_m)
+
+        
+
             # combined step only on affine step success 
             if is_kkt_solve_success
 
@@ -271,7 +276,9 @@ function solve!(
                 #--------------
                 α = solver_get_step_length(s,:affine,scaling)
                 σ = _calc_centering_parameter(α)
-  
+                println("α and σ")
+                println(α)
+                println(σ)
                 #calculate the combined step and length
                 #--------------
                 variables_combined_step_rhs!(
@@ -279,6 +286,13 @@ function solve!(
                     s.variables, 
                     s.step_lhs, σ, μ
                 )
+
+                #=print("combined rhs: ")
+                println(s.step_rhs.x)
+                println(s.step_rhs.u)
+                println(s.step_rhs.λ_m)
+                println(s.step_rhs.v)
+                println(s.step_rhs.q_m)=#
 
                 @timeit s.timers "kkt solve" begin
                 is_kkt_solve_success =
@@ -288,6 +302,13 @@ function solve!(
                     )
                 end
 
+                #error("Foo")
+                #=print("combined step: ")
+                println(s.step_lhs.x)
+                println(s.step_lhs.u)
+                println(s.step_lhs.λ_m)
+                println(s.step_lhs.v)
+                println(s.step_lhs.q_m)=#
             end
 
             # check for numerical failure and update strategy
@@ -301,9 +322,8 @@ function solve!(
             #compute final step length and update the current iterate
             #--------------
             α = solver_get_step_length(s,:combined,scaling)
-#=            println(α)
-            println(s.variables)
-            println(s.step_lhs)=#
+
+
             # check for undersized step and update strategy
             (action,scaling) = _strategy_checkpoint_small_step(s, α, scaling)
             if     action === NoUpdate; ();  #just keep going 
@@ -315,7 +335,7 @@ function solve!(
             info_save_prev_iterate(s.info,s.variables,s.prev_vars)
 
             variables_add_step!(s.variables,s.step_lhs,α)
-
+        
         end  #end while
         #----------
         #----------
@@ -323,7 +343,7 @@ function solve!(
         end #end IP iteration timer
 
     end #end solve! timer
-
+    
     # Check we if actually took a final step.  If not, we need 
     # to recapture the scalars and print one last line 
     if(α == zero(T))

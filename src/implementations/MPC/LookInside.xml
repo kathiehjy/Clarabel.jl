@@ -30,3 +30,91 @@ julia> result.v
 
 
 INSUFFICIENT_PROGRESS evaluated at MPCsolver line 464
+
+
+
+test for Affine step
+R*(vars.u+step.u)+D'*(vars.λ_m+step.λ_m)+B'*(vars.v+step.v)
+1×2 Matrix{Float64}:
+ 0.0  7.10543e-15
+
+ -G*(vars.x+step.x)+D*(vars.u+step.u)+(vars.q_m+step.q_m).-d
+1×2 Matrix{Float64}:
+ 0.0  1.42109e-14
+
+ A*(vars.x[:,1]+step.x[:,1])+B*(vars.u[:,1]+step.u[:,1])-(vars.x[:,2]+step.x[:,2])
+1-element Vector{Float64}:
+ -3.552713678800501e-15
+
+ A*(vars.x[:,2]+step.x[:,2])+B*(vars.u[:,2]+step.u[:,2])-(vars.x_end+step.x_end)
+1-element Vector{Float64}:
+ 0.0
+
+ Q*(vars.x[:,2]+step.x[:,2])-G'*(vars.λ_m[:,2]+step.λ_m[:,2])+A'*(vars.v[:,2]+step.v[:,2])-(vars.v[:,1]+step.v[:,1])
+1-element Vector{Float64}:
+ 1.4210854715202004e-14
+
+ Q̅*(vars.x_end+step.x_end)-(vars.v[:,2]+step.v[:,2])
+1-element Vector{Float64}:
+ 0.0
+
+Test combined step
+sigma*mu = 0.9707050151981782
+1-sigma*mu = 0.0292949848018218
+
+solver.residuals.r2
+1×2 Matrix{Float64}:
+ 1.0  1.0
+
+R*(step_lhs.u)+D'*(step_lhs.λ_m)+B'*(step_lhs.v)
+1×2 Matrix{Float64}:
+ -0.029295  -0.029295
+
+solver.residuals.r3
+1×2 Matrix{Float64}:
+ -100.0  -99.0
+
+-G*(step_lhs.x)+D*(step_lhs.u)+(step_lhs.q_m)
+1×2 Matrix{Float64}:
+ 2.9295  2.9002
+
+ solver.residuals.r1
+1×2 Matrix{Float64}:
+ 0.0  -1.0
+Q*(step_lhs.x[:,2])-G'*(step_lhs.λ_m[:,2])+A'*(step_lhs.v[:,2])-(step_lhs.v[:,1])
+1-element Vector{Float64}:
+ 0.029294984802618274
+
+solver.residuals.r_end
+1-element Vector{Float64}:
+ 0.0
+
+solver.residuals.r4
+1×2 Matrix{Float64}:
+ 1.0  0.0
+
+julia> A*step_lhs.x[:,1]+B*step_lhs.u[:,1]-step_lhs.x[:,2]
+1-element Vector{Float64}:
+ -0.029294984801481405
+
+julia> A*step_lhs.x[:,2]+B*step_lhs.u[:,2]-step_lhs.x_end
+1-element Vector{Float64}:
+ -4.547473508864641e-13
+
+julia> Q̅*step_lhs.x_end-step_lhs.v[:,2]
+1-element Vector{Float64}:
+ 0.0
+
+solver.step_rhs.q_m
+1×2 Matrix{Float64}:
+ -10178.6  -4500.19
+
+julia> Diagonal(step_lhs.q_m[:,1])*vars.λ_m[:,1]+Diagonal(step_lhs.λ_m[:,1])*vars.q_m[:,1]
+1-element Vector{Float64}:
+ 10178.589294984804
+
+julia> Diagonal(step_lhs.q_m[:,2])*vars.λ_m[:,2]+Diagonal(step_lhs.λ_m[:,2])*vars.q_m[:,2]
+1-element Vector{Float64}:
+ 4500.1892949848025
+
+ 

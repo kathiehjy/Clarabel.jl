@@ -254,7 +254,7 @@ function solve!(
                     s.data, s.variables, s.cones, :affine
                 )
             end
-
+            error("Foo")
             # combined step only on affine step success 
             if is_kkt_solve_success
 

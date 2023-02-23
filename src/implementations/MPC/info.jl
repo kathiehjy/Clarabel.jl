@@ -77,7 +77,7 @@ function info_check_termination!(
     # time / iteration limits
     #----------------------
     if info.status == UNSOLVED
-        if settings.max_iter  == info.iterations
+        if settings.max_iter  <= info.iterations
             info.status = MAX_ITERATIONS
 
         elseif info.solve_time > settings.time_limit
