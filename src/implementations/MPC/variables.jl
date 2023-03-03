@@ -133,7 +133,7 @@ function variables_combined_step_rhs!(
 
 
     dotσμ = σ * μ
-    println(dotσμ)
+    #println(dotσμ)
     println(1-dotσμ)
     @. d.x     = (one(T) - dotσμ)*r.r1
     @. d.u     = (one(T) - dotσμ)*r.r2

@@ -111,8 +111,13 @@ function kkt_solve!(
         lhs.v[:,i+1] = result[i*dim+1+m+h:i*dim+n+m+h] 
     end
     lhs.λ .= vec(lhs.λ_m)
-    Ttotal = Diagonal(inv.(λ_m_copy)).*Diagonal(q_m_copy)
-    lhs.q_m = -Ttotal*lhs.λ_m - Diagonal(inv.(variables.λ_m)) * Λ
+    #Total = Matrix(undef,h,N)
+    for i in 1:N
+        #Total[:,i] = Diagonal(inv.(variables.λ_m[:,i]))*Diagonal(variables.q_m[:,i])
+        lhs.q_m[:,i] = -Diagonal(inv.(variables.λ_m[:,i]))*Diagonal(variables.q_m[:,i])*lhs.λ_m[:,i] - Diagonal(inv.(variables.λ_m[:,i]))*Λ[:,i]
+    end
+    #Ttotal = Diagonal(inv.(λ_m_copy)).*Diagonal(q_m_copy)
+    #lhs.q_m = -Ttotal*lhs.λ_m - Diagonal(inv.(variables.λ_m)) * Λ
     lhs.q .= vec(lhs.q_m)
     lhs.x_end = result[total_d-n+1:end]
     

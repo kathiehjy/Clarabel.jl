@@ -192,13 +192,27 @@ function solve!(
 
         scaling = PrimalDual::ScalingStrategy
 
+        
+        #=
+        Initialise with result of previous step
+         =#
+        s.variables.x = Matrix([1.0 -1124.3059710866607])
+        s.variables.x_end = [-2609.0711808529895]
+        s.variables.u = Matrix([-1124.3346859422263 -1484.765209766329])
+        s.variables.v = Matrix([-7827.213542558968 -2609.0711808529895])
+        s.variables.λ .= [8952.51951364563, 4094.8076757637523] 
+        s.variables.q .= [1128.2061714988056, 364.3020093806828]
+        s.variables.λ_m .= Matrix([4094.8076757637523 4094.8076757637523])
+        s.variables.q_m .= Matrix([1128.2061714988056 364.3020093806828])
+       
+
         while true
 
             #update the residuals
             #--------------
             residuals_update!(s.residuals,s.variables,s.data)
             
-
+            println(s.variables.x)
             #calculate duality gap (scaled)
             #--------------
             μ = variables_calc_mu(s.variables)
@@ -263,9 +277,9 @@ function solve!(
                 )
             end
 
-            #error("Foo")
-            println(s.step_lhs.q_m)
-            println(s.step_lhs.λ_m)
+            error("Foo")
+            #println(s.step_lhs.q_m)
+            #println(s.step_lhs.λ_m)
 
         
 
@@ -276,9 +290,9 @@ function solve!(
                 #--------------
                 α = solver_get_step_length(s,:affine,scaling)
                 σ = _calc_centering_parameter(α)
-                println("α and σ")
+                #=println("α and σ")
                 println(α)
-                println(σ)
+                println(σ)=#
                 #calculate the combined step and length
                 #--------------
                 variables_combined_step_rhs!(
@@ -302,7 +316,7 @@ function solve!(
                     )
                 end
 
-                #error("Foo")
+                error("Foo")
                 #=print("combined step: ")
                 println(s.step_lhs.x)
                 println(s.step_lhs.u)
@@ -335,7 +349,7 @@ function solve!(
             info_save_prev_iterate(s.info,s.variables,s.prev_vars)
 
             variables_add_step!(s.variables,s.step_lhs,α)
-        
+            #error("Foo")
         end  #end while
         #----------
         #----------

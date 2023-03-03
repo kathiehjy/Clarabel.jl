@@ -117,4 +117,79 @@ julia> Diagonal(step_lhs.q_m[:,2])*vars.λ_m[:,2]+Diagonal(step_lhs.λ_m[:,2])*v
 1-element Vector{Float64}:
  4500.1892949848025
 
+
+
+At the beginning of 2nd step, the residual almost = 0
+step = solver.step_lhs
+Clarabel.MPCVariables{Float64}([0.0 0.0], [9.3367814818e-313], [0.0 0.0], [2.961490777e-314 2.2350928244e-314], [0.0, 0.0], [0.0, 0.0], [-2.5310338705116944e-146 4.74e-322], [5.0e-324 2.2354819346e-314])
+
+julia> resi = solver.residuals
+Clarabel.MPCResiduals{Float64}([5.0e-324 0.0], [0.0 0.0], [5.0e-324 0.0], [5.0e-324 0.0], [0.0])
+
+
+test affine step with pre-assigned initialization
+julia> R*step.u+D'*step.λ_m+B'*step.v
+1×2 Matrix{Float64}:
+ -0.971285  -0.971285
+
+julia> resi.r2
+1×2 Matrix{Float64}:
+ 0.971285  0.971285
  
+r2 correct
+
+ julia> A*step.x[:,1]+B*step.u[:,1]-step.x[:,2]
+1-element Vector{Float64}:
+ -0.9712851444344324
+
+julia> A*step.x[:,2]+B*step.u[:,2]-step.x_end
+1-element Vector{Float64}:
+ -2.2737367544323206e-13
+
+julia> resi.r4
+1×2 Matrix{Float64}:
+ 0.971285  0.0
+
+r4 correct
+
+julia> Q*step.x[:,2]-G'*step.λ_m[:,2]+A'*step.v[:,2]-step.v[:,1]
+1-element Vector{Float64}:
+ 0.9712851444337502
+
+julia> resi.r1
+1×2 Matrix{Float64}:
+ 0.0  -0.971285
+
+r1 correct
+
+julia> Q̅*step.x_end - step.v[:,2]
+1-element Vector{Float64}:
+ 0.0
+
+julia> resi.r_end
+1-element Vector{Float64}:
+ 0.0
+
+r_end correct
+
+julia> -G*step.x+D*step.u+step.q_m
+1×2 Matrix{Float64}:
+ 97.1285  379.488
+
+julia> resi.r3
+1×2 Matrix{Float64}:
+ -97.1285  -96.1572
+problem with the second element of r3
+
+
+
+when initialize r3 with equal vector, e.g.s.variables.λ .= [4094.8076757637523, 4094.8076757637523] 
+julia> -G*step.x+D*step.u+step.q_m
+1×2 Matrix{Float64}:
+ 97.1285  630.677
+
+julia> resi.r3
+1×2 Matrix{Float64}:
+ -97.1285  -96.1572
+
+still error
