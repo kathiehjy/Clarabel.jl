@@ -195,9 +195,9 @@ function solve!(
             
             iter += 1
             # println("ITER = ", iter)
-            if(iter > 20)
-                break
-            end 
+            #if(iter > 20)
+            #    break
+            #end 
 
             """No scaling for SVM problem
             #update the scalings

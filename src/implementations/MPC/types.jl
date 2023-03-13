@@ -209,6 +209,8 @@ mutable struct MPCKKTSystem{T} <: AbstractKKTSystem{T}
     v::Matrix{T}           # Lagranian multiplier for equility constraints
     λ::Vector{T}      # Lagranian multiplier for inequility constraints λ>=0
     q::Vector{T} 
+    RHS::Vector{T}
+    coefficient::Matrix
 
 
 
@@ -221,14 +223,18 @@ mutable struct MPCKKTSystem{T} <: AbstractKKTSystem{T}
         N = data.N
         m = data.m
         h = data.h
+        dim = 2 * n + h + m
+        total_d = N * (dim)
         x = Matrix{T}(undef,n,N)
         x_end = Vector{T}(undef,n)
         u = Matrix{T}(undef,m,N)
         v = Matrix{T}(undef,n,N)
         λ = Vector{T}(undef,h*N)
         q = Vector{T}(undef,h*N)
+        coefficient = zeros(total_d, total_d)  # Initialise using zeros not undef, as only assign some of its element not all of them
+        RHS = Vector{T}(undef, total_d)
 
-        return new(x,x_end,u,v,λ,q)
+        return new(x,x_end,u,v,λ,q,RHS,coefficient)
 
     end
 

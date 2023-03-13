@@ -1,4 +1,5 @@
 using Clarabel, SparseArrays
+# Solving the svm problem using the default Clarabel solver
 D = [1. 2 -1; 0 2 -1; 1 1.5 -1; 3 3 1; 2 4 1; 1 8 1]   
 C = 1.               
 include("./src/implementations/svm/SVMinterface.jl")

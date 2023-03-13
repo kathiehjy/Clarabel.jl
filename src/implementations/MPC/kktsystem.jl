@@ -28,7 +28,7 @@ end
 
 
 function kkt_solve!(
-    kktsystem::MPCKKTSystem{T},
+    kktsystem::MPCKKTSystem{T}, # kktsystem structure has pre-allocated memory for all the variables used
     lhs::MPCVariables{T},
     rhs::MPCVariables{T},
     data::MPCProblemData{T},
@@ -97,7 +97,10 @@ function kkt_solve!(
     coefficient[total_d-n+1:end,total_d-n+1:end]             .= data.Q̅
     RHS[total_d-n+1:end] = r_end
 
-    result = -inv(coefficient) * RHS
+    #result = -inv(coefficient) * RHS
+    Factor = lu(coefficient)
+    result = Factor \ (-RHS)
+
 
     # lhs is to store the steps taken by each variable, since x0 is a constant, step for x[:,1] is always 0 
     lhs.x[:,1] .= 0

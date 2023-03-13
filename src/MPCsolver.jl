@@ -193,18 +193,16 @@ function solve!(
         scaling = PrimalDual::ScalingStrategy
 
         
+        # Initialise with the result of previous step after the combined step
         #=
-        Initialise with result of previous step
-         =#
-        s.variables.x = Matrix([1.0 -1124.3059710866607])
-        s.variables.x_end = [-2609.0711808529895]
-        s.variables.u = Matrix([-1124.3346859422263 -1484.765209766329])
-        s.variables.v = Matrix([-7827.213542558968 -2609.0711808529895])
-        s.variables.λ .= [8952.51951364563, 4094.8076757637523] 
-        s.variables.q .= [1128.2061714988056, 364.3020093806828]
-        s.variables.λ_m .= Matrix([4094.8076757637523 4094.8076757637523])
-        s.variables.q_m .= Matrix([1128.2061714988056 364.3020093806828])
-       
+        s.variables.x = Matrix([1.0  0.0  0.0  0.0  0.0  0.0])
+        s.variables.x_end = [0.0]
+        s.variables.u = Matrix([0.0  0.0  0.0  0.0  0.0  0.0])
+        s.variables.v = Matrix([0.0  0.0  0.0  0.0  0.0  0.0])
+        s.variables.q .= [1.0;1.0;1.0;1.0;1.0;1.0]
+        s.variables.λ .= [1.0;1.0;1.0;1.0;1.0;1.0]
+        =#
+
 
         while true
 
@@ -212,7 +210,7 @@ function solve!(
             #--------------
             residuals_update!(s.residuals,s.variables,s.data)
             
-            println(s.variables.x)
+            # println(s.variables.x)
             #calculate duality gap (scaled)
             #--------------
             μ = variables_calc_mu(s.variables)
@@ -243,9 +241,9 @@ function solve!(
             #increment counter here because we only count
             #iterations that produce a KKT update 
             iter += 1
-            if(iter > 20)
-                break
-            end 
+            #if(iter >= 2)
+            #    break
+            #end 
 
             """ Didn't consider scaling for the current MPC problem
             #update the scalings
@@ -277,7 +275,7 @@ function solve!(
                 )
             end
 
-            error("Foo")
+            #error("Foo")
             #println(s.step_lhs.q_m)
             #println(s.step_lhs.λ_m)
 
@@ -289,7 +287,7 @@ function solve!(
                 #calculate step length and centering parameter
                 #--------------
                 α = solver_get_step_length(s,:affine,scaling)
-                σ = _calc_centering_parameter(α)
+                σ = _calc_centering_parameter(α,s.step_lhs,s.variables)
                 #=println("α and σ")
                 println(α)
                 println(σ)=#
@@ -316,7 +314,7 @@ function solve!(
                     )
                 end
 
-                error("Foo")
+                #error("Foo")
                 #=print("combined step: ")
                 println(s.step_lhs.x)
                 println(s.step_lhs.u)
@@ -371,10 +369,10 @@ function solve!(
     @notimeit info_print_footer(s.info,s.settings)
 
     """solution.x[:,1] and variables.x[:,1] all correspond to x0,
-    they must be the same
+    they must be the same, x0 is unchanged 
     """
-    println(s.solution.x[:,1])
-    println(s.variables.x[:,1])
+    #println(s.solution.x[:,1])
+    #println(s.variables.x[:,1])
     return s.solution
 end
 
@@ -385,7 +383,7 @@ function solver_default_start!(s::Solver{T}) where {T}
     # Otherwise, initialize along central rays
 
     if (false && is_symmetric(s.cones))
-        println("Symmetric init")
+        #println("Symmetric init")
         #set all scalings to identity (or zero for the zero cone)
         set_identity_scaling!(s.cones)
         #Refactor
@@ -397,7 +395,7 @@ function solver_default_start!(s::Solver{T}) where {T}
 
     else
         #Assigns unit (z,s) and zeros the primal variables 
-        println("Unit init")
+        #println("Unit init")
         variables_unit_initialization!(s.variables, s.data)
     end
 
@@ -444,9 +442,12 @@ end
 
 
 # Mehrotra heuristic
-function _calc_centering_parameter(α::T) where{T}
-
-    return σ = (1-α)^3
+function _calc_centering_parameter(α::T,step,variables) where{T}
+    ρ = 1 - α
+    #ρ = (variables.q.vec+α*step.q.vec)'*(variables.λ.vec+α*step.λ.vec)/(variables.q.vec'*variables.λ.vec)
+    σ = (max(0,min(1,ρ)))^3
+    println("σ --: ", σ)
+    return σ
 end
 
 

@@ -115,10 +115,14 @@ function variables_combined_step_rhs!(
 ) where {T}
 
     dotσμ = σ * μ
-    @. d.w  = (one(T) - dotσμ)*r.rw
-    @. d.ξ  = (one(T) - dotσμ)*r.rξ
-    @. d.λ1 = (one(T) - dotσμ)*r.rλ1
-    d.b     = (one(T) - dotσμ)*r.rλ2
+    # @. d.w  = (one(T) - dotσμ)*r.rw
+    # @. d.ξ  = (one(T) - dotσμ)*r.rξ
+    # @. d.λ1 = (one(T) - dotσμ)*r.rλ1
+    # d.b     = (one(T) - dotσμ)*r.rλ2
+    @. d.w  = (one(T))*r.rw
+    @. d.ξ  = (one(T))*r.rξ
+    @. d.λ1 = (one(T))*r.rλ1
+    d.b     = (one(T))*r.rλ2
     d.λ2   .= variables.λ2 .* variables.q + step.q .*step.λ2 .- dotσμ
     d.q    .= variables.λ1 .* variables.ξ + step.λ1 .*step.ξ .- dotσμ
 

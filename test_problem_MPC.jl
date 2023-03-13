@@ -28,13 +28,13 @@ B = I(1)*1.
 D = I(1)*1.
 G = 1 *I(1)*1.
 d = [100.]
-N = 2
+N = 1000
 x0 = [1.]
 R = I(1)*1.
 Q = I(1)*1.
-Q̅ = I(1)*1.
+Q̅ = I(1)*5.
 
-settings = Clarabel.Settings(max_iter=20,verbose = true)
+settings = Clarabel.Settings(max_iter=50,verbose = true)
 solver   = Clarabel.Solver()
 Clarabel.MPC_setup!(solver,Q,R,Q̅,A,B,D,G,d,N,x0,settings)
 result = Clarabel.solve!(solver)

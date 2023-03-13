@@ -30,9 +30,9 @@ function variables_calc_step_length(
     #α *= settings.max_step_fraction
     #end
 
-    #if(steptype == :combined)
+    if(steptype == :combined)
         α *= settings.max_step_fraction
-    #end
+    end
 
     return α   
 
@@ -134,16 +134,22 @@ function variables_combined_step_rhs!(
 
     dotσμ = σ * μ
     #println(dotσμ)
-    println(1-dotσμ)
-    @. d.x     = (one(T) - dotσμ)*r.r1
-    @. d.u     = (one(T) - dotσμ)*r.r2
-    @. d.λ_m   = (one(T) - dotσμ)*r.r3
-    @. d.v     = (one(T) - dotσμ)*r.r4
+    #println(1-dotσμ)
+#     @. d.x     = (one(T) - dotσμ)*r.r1
+#     @. d.u     = (one(T) - dotσμ)*r.r2
+#     @. d.λ_m   = (one(T) - dotσμ)*r.r3
+#     @. d.v     = (one(T) - dotσμ)*r.r4 
+    @. d.x     = one(T)*r.r1
+    @. d.u     = one(T)*r.r2
+    @. d.λ_m   = one(T)*r.r3
+    @. d.v     = one(T)*r.r4 
+
     for i in 1:size(r.r1,2)
         #d.q_m[:,i] = Diagonal(variables.q_m[:,i]) * variables.λ_m[:,i] + Diagonal(step.q_m[:,i]) * step.λ_m[:,i] .+ dotσμ
         d.q_m[:,i] = Diagonal(variables.q_m[:,i]) * variables.λ_m[:,i] .- dotσμ + Diagonal(step.q_m[:,i]) * step.λ_m[:,i] 
     end
-    @. d.x_end = (one(T) - dotσμ)*r.r_end 
+    #@. d.x_end = (one(T) - dotσμ)*r.r_end 
+    @. d.x_end = one(T)*r.r_end 
 
 end
 

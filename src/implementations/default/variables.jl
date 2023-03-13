@@ -176,7 +176,7 @@ function variables_unit_initialization!(
     cones::CompositeCone{T}
 ) where {T}
 
-    println("Foo!")
+    #println("Foo!")
     #set conic variables to units and x to 0
     unit_initialization!(cones,variables.z,variables.s)
 

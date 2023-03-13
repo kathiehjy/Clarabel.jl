@@ -1,5 +1,5 @@
 using Clarabel
-# Toy Example for svm problem
+# Toy Example using SVMsolver 
 # The data must be passed in as Float to execute the right setup! function
 
 #D = [1. 1 1;-1 -1 -1]              # must pass in Float quantity  

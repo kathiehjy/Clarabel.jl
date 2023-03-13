@@ -42,6 +42,7 @@ module Clarabel
     # printing and top level solver
     """ Choose between different solver
     """
+    #default solver
     #include("./info_print.jl")
     #include("./solver.jl")
 

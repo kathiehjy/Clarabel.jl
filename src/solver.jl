@@ -60,13 +60,14 @@ setup!(model, P, q, A, b, cones, settings)
 
 To solve the problem, you must make a subsequent call to [`solve!`](@ref)
 """
-function setup!(s,P,c,A,b,cones,settings::Settings)
+function setup!(s::Solver{T},P,c,A,b,cones,settings::Settings
+    ) where{T}
     #this allows total override of settings during setup
     s.settings = settings
     setup!(s,P,c,A,b,cones)
 end
 
-function setup!(s,P,c,A,b,cones; kwargs...)
+function setup!(s::Solver{T},P,c,A,b,cones; kwargs...) where{T}
     #this allows override of individual settings during setup
     settings_populate!(s.settings, Dict(kwargs))
     setup!(s,P,c,A,b,cones)
@@ -75,11 +76,11 @@ end
 # main setup function
 function setup!(
     s::Solver{T},
-    P::AbstractMatrix,
-    q::Vector,
-    A::AbstractMatrix,
-    b::Vector,
-    cones::Vector{<:SupportedCone},
+    P,
+    q,
+    A,
+    b,
+    cones,
 ) where{T}
 
     #sanity check problem dimensions
@@ -254,7 +255,8 @@ function solve!(
                     s.data, s.variables, s.cones, :affine
                 )
             end
-            error("Foo")
+            
+            #error("Foo")
             # combined step only on affine step success 
             if is_kkt_solve_success
 
@@ -335,7 +337,7 @@ function solver_default_start!(s::Solver{T}) where {T}
     # Otherwise, initialize along central rays
 
     if (false && is_symmetric(s.cones))
-        println("Symmetric init")
+        # println("Symmetric init")
         #set all scalings to identity (or zero for the zero cone)
         set_identity_scaling!(s.cones)
         #Refactor
@@ -347,7 +349,7 @@ function solver_default_start!(s::Solver{T}) where {T}
 
     else
         #Assigns unit (z,s) and zeros the primal variables 
-        println("Unit init")
+        #println("Unit init")
         variables_unit_initialization!(s.variables, s.cones)
     end
 

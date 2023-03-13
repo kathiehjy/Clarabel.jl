@@ -62,7 +62,7 @@ iterative\\_refinement\\_stop\\_ratio   | 5.0       | iterative refinement stall
 """
 Base.@kwdef mutable struct Settings{T <: AbstractFloat}
 
-    max_iter::UInt32    	= 50
+    max_iter::UInt32    	= 200
     time_limit::Float64     = Inf
     verbose::Bool           = true
     max_step_fraction::T    = 0.99

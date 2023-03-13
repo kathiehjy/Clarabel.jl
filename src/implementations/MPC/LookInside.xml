@@ -192,4 +192,11 @@ julia> resi.r3
 1×2 Matrix{Float64}:
  -97.1285  -96.1572
 
-still error
+problem of r3 is solved
+-G*step.x+D*step.u+step.q_m
+1×2 Matrix{Float64}:
+ 97.1285  96.1572
+
+julia> solver.residuals.r3
+1×2 Matrix{Float64}:
+ -97.1285  -96.1572
