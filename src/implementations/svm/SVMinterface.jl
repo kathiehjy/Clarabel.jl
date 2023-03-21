@@ -33,7 +33,9 @@ function SVMinterface(D, C)
     for i in range(1, l)
         A2[i, n+1+i] = -1
     end
-    A = sparse([A1; A2])          # Construct correctly -- tested
+    A1  = sparse(A1);
+    A2  = sparse(A2);
+    A = [A1;A2]          # Construct correctly -- tested
 
     # Construct b
     b1 = -1* ones(l)

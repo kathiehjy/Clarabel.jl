@@ -10,7 +10,7 @@ Argument | Default Value | Description
 ||
 __Main Algorithm Settings__||
 ||
-max\\_iter                              | 50        | maximum number of iterations
+max\\_iter                              | 400       | maximum number of iterations
 time\\_limit                            | Inf       | maximum run time (seconds)
 verbose                                 | true      | verbose printing
 max\\_step\\_fraction                   | 0.99      | maximum interior point step length
@@ -62,7 +62,7 @@ iterative\\_refinement\\_stop\\_ratio   | 5.0       | iterative refinement stall
 """
 Base.@kwdef mutable struct Settings{T <: AbstractFloat}
 
-    max_iter::UInt32    	= 200
+    max_iter::UInt32    	= 400
     time_limit::Float64     = Inf
     verbose::Bool           = true
     max_step_fraction::T    = 0.99

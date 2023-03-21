@@ -19,6 +19,7 @@ function info_print_configuration(
     @printf("\nproblem:\n")
     @printf("  Data points           = %i\n", data.N)
     @printf("  dim(Feature vector)   = %i\n", data.n)
+    @printf("  C                     = %g\n", data.C)  # Print the least decimal
     print_settings(settings, T)
     @printf("\n")
 
