@@ -118,7 +118,7 @@ D_validate6_label = deepcopy(df_train1[1:10000,1])
 """
 # Store the average correct rate for each C
 Ave_rate = []
-C_options = [0.0001, 0.001, 0.01]
+C_options = [0.0001, 0.001, 0.01, 0.1, 1]
 
 settings = Clarabel.Settings(verbose = true)
 solver   = Clarabel.Solver()

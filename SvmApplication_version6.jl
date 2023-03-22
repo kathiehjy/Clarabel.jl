@@ -1,12 +1,12 @@
-#=using CSV, LinearAlgebra, Statistics
+using CSV, LinearAlgebra, Statistics
 using DataFrames
 using Clarabel 
 
-"""Obtain a Binary Classifier for each value in 0-9
+"""Obtain a Binary Classifier for each value in 6, should give the same result as version
 """
 # validate function defined to do validation test using each (train, validate) set
 function validate(
-    D_train, C, features, true_label, solver, settings
+    D_train, C, features, true_label, solver, settings, validation_length
 )
     Clarabel.svm_setup!(solver, D_train, C, settings)
     result = Clarabel.solve!(solver)  # Corresponds to hyperplane wᵀx - β = 0 
@@ -20,9 +20,9 @@ function validate(
 
     # Store the predicted value of the validation dataset
     # 10000 datapoint in the validation set
-    df_predicted_v = zeros(10000,1)
+    df_predicted_v = zeros(validation_length,1)
 
-    for i in range(; length = 10000)
+    for i in range(; length = validation_length)
         prediction_v = features[i,:] ⋅ w - b
 
         if prediction_v > 0 
@@ -30,8 +30,7 @@ function validate(
         elseif prediction_v < 0
             df_predicted_v[i] = -1
         else
-            # Lie on the classifier -- unclassified set to 1000
-            df_predicted_v[i] = 1000 
+            df_predicted_v[i] = 0
         end
 
     end
@@ -41,7 +40,7 @@ function validate(
     # If the prediction is correct, it will give a 0 component in D_differ
     D_differ = true_label - df_predicted_v   
     correct = count(i->(i == 0), D_differ)
-    correct_rate = correct/10000
+    correct_rate = correct/validation_length
 
   return correct, correct_rate
 end
@@ -50,19 +49,17 @@ end
 # The data is stored as DataFrame 
 df_train = CSV.read("/Users/huangjingyi/Desktop/4yp/MNIST dataset/mnist_train.csv", DataFrame)
 
-"""Define inside local scope as it's changed for each j"""
 # Convert the DataFrame object to Matrix
-#df_train1 = Matrix(df_train)
-#length_train = size(df_train1, 1)
-#feature_number = size(df_train1,2)
+df_train1 = Matrix(df_train)
+length_train = size(df_train1, 1)
+feature_number = size(df_train1,2)
 
 # Load testing data
 df_test = CSV.read("/Users/huangjingyi/Desktop/4yp/MNIST dataset/mnist_test.csv", DataFrame)
 
-"""Define inside local scope as it's changed for each j"""
 # Convert the DataFrame object to Matrix
-#df_test1 = Matrix(df_test)
-#length_test = size(df_test1, 1)
+df_test1 = Matrix(df_test)
+length_test = size(df_test1, 1)
 
 # Consider the multi-class classification into binary classification -- “5” (1) or “not 5” (1)
 # There are 5421 training example with label 5
@@ -70,13 +67,6 @@ optimal_Cs = []
 parameterSet = []
 classification_rate = []
 for j in range(0, stop = 9)
-
-    # Convert the DataFrame object to Matrix
-    df_train1 = Matrix(df_train)
-    length_train = size(df_train1, 1)
-    feature_number = size(df_train1,2)
-
-
     for i in range(; length = length_train)
         if df_train1[i, 1] == j
             df_train1[i, 1] = 1
@@ -85,7 +75,7 @@ for j in range(0, stop = 9)
         end
         i = i + 1
     end
-    
+
     """Choose between different C, using validation test
     mnist_train is split into training data and validation data
     """
@@ -145,14 +135,14 @@ for j in range(0, stop = 9)
     settings = Clarabel.Settings(verbose = true)
     solver   = Clarabel.Solver()
     for i in C_options
-        C = i 
+        local C = i 
 
-        (correct1, correct_rate1) = validate(D_train1,C,D_validate1,D_validate1_label,solver,settings)
-        (correct2, correct_rate2) = validate(D_train2,C,D_validate2,D_validate2_label,solver,settings)
-        (correct3, correct_rate3) = validate(D_train3,C,D_validate3,D_validate3_label,solver,settings)
-        (correct4, correct_rate4) = validate(D_train4,C,D_validate4,D_validate4_label,solver,settings)
-        (correct5, correct_rate5) = validate(D_train5,C,D_validate5,D_validate5_label,solver,settings)
-        (correct6, correct_rate6) = validate(D_train6,C,D_validate6,D_validate6_label,solver,settings)
+        (correct1, correct_rate1) = validate(D_train1,C,D_validate1,D_validate1_label,solver,settings,10000)
+        (correct2, correct_rate2) = validate(D_train2,C,D_validate2,D_validate2_label,solver,settings,10000)
+        (correct3, correct_rate3) = validate(D_train3,C,D_validate3,D_validate3_label,solver,settings,10000)
+        (correct4, correct_rate4) = validate(D_train4,C,D_validate4,D_validate4_label,solver,settings,10000)
+        (correct5, correct_rate5) = validate(D_train5,C,D_validate5,D_validate5_label,solver,settings,10000)
+        (correct6, correct_rate6) = validate(D_train6,C,D_validate6,D_validate6_label,solver,settings,10000)
 
         ave_rate = mean([correct_rate1,correct_rate2,correct_rate3,correct_rate4,correct_rate5,correct_rate6])
         push!(Ave_rate,ave_rate)
@@ -182,9 +172,6 @@ for j in range(0, stop = 9)
     """Test the parametric model and find the classification error for test dataset"""
 
     """Testing using testing dataset"""
-    # Convert the DataFrame object to Matrix
-    df_test1 = Matrix(df_test)
-    length_test = size(df_test1, 1)
     # Consider the multi-class classification into binary classification -- “5” (1) or “not 5” (1)
     for i in range(; length = length_test)
         if df_test1[i, 1] == j
@@ -212,8 +199,7 @@ for j in range(0, stop = 9)
         elseif prediction < 0
             df_predicted[i] = -1
         else
-            # Lie on the classifier -- unclassified set to 1000
-            df_predicted_v[i] = 1000 
+            df_predicted[i] = 0
         end
     end
 
@@ -227,7 +213,6 @@ for j in range(0, stop = 9)
     println("No of examples classified correctly ",correct)
     println("Percentage the classified correctly ",correct_rate)
 end
-=#
 
 
 # Obtain a multiclass classification via binary classification
@@ -246,16 +231,14 @@ df_predicted_multi = zeros(10000,1)
 for i in range(; length = 10000)
     # Iterate over all the class and pick the one with highest score
     # Divide by the norm to calibrate the score of Classifier
-    w_opt = parameterSet[1][1:end-1]
+    w_opt = parameterSet[1][1:end-1] 
     b_opt = parameterSet[1][end]
     class = 0
     Best_prediction = D_feature_multi[i,:] ⋅ w_opt - b_opt
-    #println("score for class 0 = ",Best_prediction)
     for j in range(; length = 9)
-        w_cur = parameterSet[j+1][1:end-1]     
-        b_cur = parameterSet[j+1][end]
+        w_cur = parameterSet[j][1:end-1]     
+        b_cur = parameterSet[j][end]
         prediction = D_feature_multi[i,:] ⋅ w_cur - b_cur
-        #println("score for class ",j, " = ", prediction)
         if prediction > Best_prediction
             w_opt = deepcopy(w_cur)
             b_opt = deepcopy(b_cur)
@@ -270,52 +253,8 @@ end
 # If the prediction is correct, it will give a 0 component in D_differ
 D_differ_multi = D_true_multi - df_predicted_multi
 correct_multi = count(i->(i == 0), D_differ_multi)
-correct_rate_multi = correct_multi/10000
+correct_rate_multi = correct_multi/length_test
 
 println("Multiclass test")
 println("No of examples classified correctly ",correct_multi)
 println("Percentage the classified correctly ",correct_rate_multi)
-
-
-#=
-# check 
-# Extract the true labels of the test data
-# In df_test1, the first element of each row is the label, the rest of the row are the features 
-df_test_check_csv = CSV.read("/Users/huangjingyi/Desktop/4yp/MNIST dataset/mnist_test.csv", DataFrame)
-df_test_check = Matrix(df_test_check_csv)
-"""Testing using testing dataset"""
-# Consider the multi-class classification into binary classification -- “5” (1) or “not 5” (1)
-for i in range(; length = 10000)
-    if df_test_check[i, 1] == 5
-        df_test_check[i, 1] = 1
-    else
-        df_test_check[i, 1] = -1
-    end
-    i = i + 1
-end
-
-D_test_check = zeros(10000, size(df_test_check,2)-1)
-D_true_check = deepcopy(df_test_check[1:end, 1]) * 1.
-D_test_check[:, 1:end] = deepcopy(df_test_check[1:end, 2:end]) * 1.
-
-
-# Store the predicted value
-df_predicted_check = zeros(10000,1)
-for i in range(; length = 10000)
-    prediction_check = D_test_check[i,:] ⋅ parameterSet[6][1:end-1] - parameterSet[6][end]
-    if prediction_check > 0 
-        df_predicted_check[i] = 1
-    elseif prediction_check < 0
-        df_predicted_check[i] = -1
-    else
-        df_predicted_check[i] = 0
-    end
-end
-
-# Compute the classification error
-# If the prediction is correct, it will give a 0 component in D_differ
-D_differ_check = D_true_check - df_predicted_check    
-correct_check = count(i->(i == 0), D_differ_check)
-correct_rate_check = correct_check/10000
-println("No of examples classified correctly ",correct_check)
-println("Percentage the classified correctly ",correct_rate_check)=#

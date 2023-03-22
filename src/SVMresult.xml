@@ -939,11 +939,11 @@ info.res_dual =
 
 
 SVM Results
-C=1 without any validation test
+C=1 without any validation test for value 5
 No of examples classified correctly 9789
 Percentage the classified correctly 0.9789
 
-validation test when C = 1
+validation test when C = 1 for value 5
 -------------------------------------------------------------
            Clarabel.jl v0.3.0  -  Clever Acronym - SVM            
                    (c) Paul Goulart                          
@@ -1480,7 +1480,7 @@ v4% 0.9744
 v5 9777
 v5% 0.9777
 v6 9786
-v6% 0.9786
+v6% 0.9786  (from version 2 & 3)
 
 
 run validation test when considering value 5
@@ -1525,9 +1525,15 @@ Ave_rate
  0.9863333333333334
  0.9860333333333333
 
-No of examples classified correctly 9865
+No of examples classified correctly 9865   (using version 4)
 Percentage the classified correctly 0.9865
 
+for j in [5,6] & C_options = [0.0001] * 1.
+Obtain 
+classification_rate
+2-element Vector{Any}:
+ 0.9797
+ 0.9865
 
 
 Run the same test for each value from 0-9 and obtain a multi classifier using from binary ones
@@ -1545,6 +1551,8 @@ optimal_Cs
  0.0001
  0.0001
 
+
+Not correct mess up local and global variable
 classification_rate
 10-element Vector{Any}:
  0.9923
@@ -1558,15 +1566,43 @@ classification_rate
  0.9026
  0.8991
 
+correct classification_rate
+julia> classification_rate
+10-element Vector{Any}:
+ 0.9923  -- 0
+ 0.9934  -- 1
+ 0.982   -- 2
+ 0.9802  -- 3
+ 0.984   -- 4
+ 0.9797  -- 5
+ 0.9865  -- 6
+ 0.9843  -- 7
+ 0.962   -- 8
+ 0.9673  -- 9
+
 
 when  |wx-b| < 1 means it will cause cost, but it still classified correctly 
 
-
+NOT correct -- (need to use parameterSet[j+1] instead of [j] as index starts from 1)
 Multiclass test
 No of examples classified correctly 1947
 Percentage the classified correctly 0.1947
 
+Not correct -- 
+Multiclass test
+No of examples classified correctly 1865
+Percentage the classified correctly 0.1865
+
 Not very good 
 From C19, need to calibrate the score of classifier
 
+Multiclass test normalized using 2-norm
+No of examples classified correctly 9188
+Percentage the classified correctly 0.9188
 
+Multiclass test without normalization from version5
+No of examples classified correctly 9211
+Percentage the classified correctly 0.9211
+
+
+don't use version 6
